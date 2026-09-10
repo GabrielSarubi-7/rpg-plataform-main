@@ -186,8 +186,8 @@ export default function GameSettingsPanel() {
               <div>
                 <strong>Camera da mesa</strong>
                 <span>
-                  Use 2D para jogar como VTT classico. O 2.5D fica guardado para
-                  uma proxima etapa.
+                  2D: VTT clássico de cima. 2.5D: perspectiva simulada.
+                  3D: cena real com câmera em perspectiva. Preferência local.
                 </span>
               </div>
 
@@ -208,6 +208,13 @@ export default function GameSettingsPanel() {
                   onClick={() => setCameraMode("2.5d")}
                 >
                   2.5D
+                </button>
+                <button
+                  type="button"
+                  className={cameraMode === "3d" ? styles.modeButtonActive : ""}
+                  onClick={() => setCameraMode("3d")}
+                >
+                  3D
                 </button>
               </div>
             </div>

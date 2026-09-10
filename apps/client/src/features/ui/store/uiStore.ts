@@ -8,7 +8,7 @@ export type RightSidebarTab =
   | "audio"
   | "characters"
   | "settings";
-export type CameraMode = "2d" | "2.5d";
+export type CameraMode = "2d" | "2.5d" | "3d";
 
 const CONFIRM_SHEET_ROLLS_KEY = "rpg-platform-confirm-sheet-rolls";
 const CAMERA_MODE_KEY = "rpg-platform-camera-mode";
@@ -209,7 +209,7 @@ function readConfirmSheetRolls() {
 function readCameraMode(): CameraMode {
   const storedValue = localStorage.getItem(CAMERA_MODE_KEY);
 
-  return storedValue === "2.5d" ? "2.5d" : "2d";
+  return storedValue === "3d" || storedValue === "2.5d" ? storedValue : "2d";
 }
 
 function readNumberSetting(

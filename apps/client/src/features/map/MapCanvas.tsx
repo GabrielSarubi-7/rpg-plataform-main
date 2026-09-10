@@ -12,6 +12,7 @@ import AnnotationLayer from "@/features/annotations/components/AnnotationLayer";
 import TokenLayer from "../tokens/components/TokenLayer";
 import TokenContextMenu from "@/features/tokens/components/TokenContextMenu";
 import ActionPreviewLayer from "@/features/actions/components/ActionPreviewLayer";
+import Scene3DGate from "@/features/scene3d/components/Scene3DGate";
 
 import { useAuthStore } from "@/features/auth/store/authStore";
 import { useCampaignStore } from "@/features/campaigns/store/campaignStore";
@@ -169,7 +170,7 @@ export default function MapCanvas() {
   const { camera, zoomAt, move, rotateBy, setMode, centerOnMap } = useCamera(
     width,
     height,
-    cameraMode,
+    cameraMode === "3d" ? "2d" : cameraMode,
   );
 
   const [tokenMenu, setTokenMenu] = useState<TokenMenuState | null>(null);
@@ -228,6 +229,7 @@ export default function MapCanvas() {
   }, [authToken, activeCampaign, loadCharacters]);
 
   useEffect(() => {
+    if (cameraMode === "3d") return;
     setMode(cameraMode);
   }, [cameraMode, setMode]);
 
@@ -960,6 +962,69 @@ export default function MapCanvas() {
     ],
   );
 
+  const tokenContextMenu = (
+    <>
+      {tokenMenu && menuToken && (
+        <TokenContextMenu
+          x={tokenMenu.x}
+          y={tokenMenu.y}
+          canResizeToken={isGm}
+          canOpenCharacter={canOpenMenuCharacter}
+          canShowHealthBar={Boolean(menuCharacter)}
+          sizeCells={normalizeTokenSizeCells(menuToken.widthCells)}
+          healthBarVisible={menuToken.showHealthBar ?? false}
+          activeConditions={menuToken.conditions ?? []}
+          elevation={menuToken.elevation ?? 0}
+          standMode={menuToken.standMode ?? "auto"}
+          onOpenCharacter={handleOpenMenuCharacter}
+          onToggleHealthBar={handleToggleMenuHealthBar}
+          onToggleCondition={handleToggleMenuCondition}
+          onClearConditions={handleClearMenuConditions}
+          onChangeElevation={handleChangeMenuElevation}
+          onSetStandMode={handleSetMenuStandMode}
+          onSetSize={handleSetMenuTokenSize}
+          onDeleteToken={() => handleDeleteToken(tokenMenu.tokenId)}
+          onClose={() => setTokenMenu(null)}
+        />
+      )}
+    </>
+  );
+
+  if (cameraMode === "3d") {
+    return <>
+      <Scene3DGate
+        key={currentMapId ?? "temporary-map"}
+        mapWidth={width}
+        mapHeight={height}
+        cellSize={cellSize}
+        backgroundImage={backgroundImage}
+        tokens={tokens}
+        characters={characters}
+        sheetTemplate={sheetTemplate}
+        selectedTokenIds={selectedTokenIds}
+        isTargeting={isTargetingAction}
+        canControlToken={canControlToken}
+        onSelectToken={setSelectedToken}
+        onMoveToken={(tokenId, position) => {
+          const token = useTokenStore.getState().tokens[tokenId];
+          if (!token || !canControlToken(token)) return;
+          moveToken(tokenId, position.x, position.y);
+          if (lobbyCode && currentMapIsLive) emitTokenMove(lobbyCode, tokenId, position.x, position.y, authToken);
+        }}
+        onTokenContextMenu={(token, point) => {
+          if (!canControlToken(token)) return;
+          setSelectedToken(token.id);
+          setTokenMenu({ ...point, tokenId: token.id });
+        }}
+        onCloseMenu={() => setTokenMenu(null)}
+        onTargetPoint={updateActionMousePosition}
+        onConfirmAction={(point) => { void confirmActionAtPoint(point); }}
+        onCancelAction={cancelActionTargeting}
+        onReturnTo2D={() => { setTokenMenu(null); useUiStore.getState().setCameraMode("2d"); }}
+      />
+      {tokenContextMenu}
+    </>;
+  }
   return (
     <div
       onDragOver={(event) => {
@@ -1239,29 +1304,7 @@ export default function MapCanvas() {
 
       {selectionBox && <AreaSelectionBox box={selectionBox} />}
 
-      {tokenMenu && menuToken && (
-        <TokenContextMenu
-          x={tokenMenu.x}
-          y={tokenMenu.y}
-          canResizeToken={isGm}
-          canOpenCharacter={canOpenMenuCharacter}
-          canShowHealthBar={Boolean(menuCharacter)}
-          sizeCells={normalizeTokenSizeCells(menuToken.widthCells)}
-          healthBarVisible={menuToken.showHealthBar ?? false}
-          activeConditions={menuToken.conditions ?? []}
-          elevation={menuToken.elevation ?? 0}
-          standMode={menuToken.standMode ?? "auto"}
-          onOpenCharacter={handleOpenMenuCharacter}
-          onToggleHealthBar={handleToggleMenuHealthBar}
-          onToggleCondition={handleToggleMenuCondition}
-          onClearConditions={handleClearMenuConditions}
-          onChangeElevation={handleChangeMenuElevation}
-          onSetStandMode={handleSetMenuStandMode}
-          onSetSize={handleSetMenuTokenSize}
-          onDeleteToken={() => handleDeleteToken(tokenMenu.tokenId)}
-          onClose={() => setTokenMenu(null)}
-        />
-      )}
+      {tokenContextMenu}
     </div>
   );
 }
