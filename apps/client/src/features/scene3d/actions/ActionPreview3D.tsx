@@ -60,6 +60,8 @@ function Preview({ action, origin, targetPoint, affectedTokenIds, tokens, cellSi
     return geometry;
   }, [t, origin.x, origin.y, targetPoint.x, targetPoint.y]);
   return <group>
+    {t.showCasterRange && Boolean(t.normalRangeFt && t.longRangeFt) &&
+      <Ring x={from.x} z={from.z} radius={feetToWorldUnits(t.normalRangeFt!)} color={action.visual.borderColor} />}
     {t.showCasterRange && range > 0 && <Ring x={from.x} z={from.z} radius={range} color={color} />}
     {t.showPathLine && <Line points={[[from.x, 0.04, from.z], [to.x, 0.04, to.z]]} color={color} lineWidth={2} raycast={() => {}} />}
     {shape && <mesh position={[center.x, 0.03, center.z]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => {}}>

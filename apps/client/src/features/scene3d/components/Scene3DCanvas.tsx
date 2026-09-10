@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
+import { Html } from "@react-three/drei/web/Html";
 import SceneCamera from "../camera/SceneCamera";
 import GroundPlane3D from "../map/GroundPlane3D";
 import Grid3D from "../map/Grid3D";
@@ -27,12 +28,16 @@ export default function Scene3DCanvas(props: Scene3DProps) {
       onCreated={({ gl }) => { gl.domElement.addEventListener("webglcontextlost", () => setContextLost(true), { once: true }); }}>
       <color attach="background" args={["#11131a"]} />
       <SceneCamera width={width} depth={depth} resetRequest={resetRequest} focusRequest={focusRequest} focus={selected ? legacyTokenToWorldPosition(selected, props.cellSize) : undefined} />
+      {/* Keep texture loading inside the renderer so Suspense does not detach
+          and remount the Canvas root while its WebGL context is still active. */}
+      <Suspense fallback={<Html fullscreen><Scene3DLoadingOverlay onReturnTo2D={props.onReturnTo2D} /></Html>}>
       <GroundPlane3D width={width} depth={depth} image={props.backgroundImage} />
       <Grid3D width={width} depth={depth} visible={gridVisible} />
       {Object.values(props.tokens).map((token) => <Token3D key={token.id} token={token} cellSize={props.cellSize}
         character={charactersById.get(token.characterId ?? "")} sheetTemplate={props.sheetTemplate} selected={props.selectedTokenIds.includes(token.id)} />)}
       <ActionPreview3D tokens={props.tokens} cellSize={props.cellSize} />
       <SceneInputController {...props} />
+      </Suspense>
     </Canvas>
     <div className={styles.toolbar} data-ui-layer="true">
       <button type="button" onClick={() => setResetRequest((n) => n + 1)}>Enquadrar mapa</button>

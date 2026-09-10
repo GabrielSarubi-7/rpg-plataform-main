@@ -2,6 +2,8 @@
   position: fixed;
   z-index: 1000;
   width: 260px;
+  box-sizing: border-box;
+  max-width: calc(100vw - 16px);
   max-height: min(520px, calc(100vh - 20px));
   overflow: auto;
   padding: 8px;

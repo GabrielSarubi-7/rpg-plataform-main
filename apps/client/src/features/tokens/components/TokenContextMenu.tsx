@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import type { TokenStandMode } from "@shared/types/token";
 import type { TokenConditionId } from "@shared/types/tokenStatus";
 import { TOKEN_SIZE_OPTIONS } from "@shared/rules/tokenRules";
@@ -49,8 +50,24 @@ export default function TokenContextMenu({
   onDeleteToken,
   onClose,
 }: TokenContextMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+    const position = () => {
+      const bounds = menu.getBoundingClientRect();
+      menu.style.left = `${Math.max(8, Math.min(x, window.innerWidth - bounds.width - 8))}px`;
+      menu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - bounds.height - 8))}px`;
+    };
+    position();
+    const observer = new ResizeObserver(position);
+    observer.observe(menu);
+    window.addEventListener("resize", position);
+    return () => { observer.disconnect(); window.removeEventListener("resize", position); };
+  }, [x, y]);
   return (
     <div
+      ref={menuRef}
       data-ui-layer="true"
       className={styles.menu}
       style={{
