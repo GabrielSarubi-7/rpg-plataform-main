@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CampaignRole {
+  owner
+  gm
+  player
+  spectator
+}
+
+enum CampaignSessionStatus {
+  active
+  ended
+}
+
+enum GridType {
+  square
+  hex
+}
+
+enum TokenVisibility {
+  public
+  gm_only
+  owner_only
+  custom
+}
+
+enum TokenDisposition {
+  friendly
+  neutral
+  hostile
+  hidden
+}
+
+enum CharacterType {
+  pc
+  npc
+  monster
+}
+
+enum CharacterVisibility {
+  private
+  gm_only
+  public
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sessions                UserSession[]
+  ownedCampaigns          Campaign[]            @relation("CampaignOwner")
+  campaignMembers         CampaignMember[]
+  createdCampaignInvites  CampaignInvite[]      @relation("CampaignInviteCreator")
+  createdCampaignSessions CampaignSession[]     @relation("CampaignSessionCreator")
+  characterPermissions    CharacterPermission[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String?   @map("refresh_token_hash")
+  expiresAt        DateTime? @map("expires_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  ownerUserId String    @map("owner_user_id")
+  name        String
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  archivedAt  DateTime? @map("archived_at")
+
+  owner      User              @relation("CampaignOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  members    CampaignMember[]
+  invites    CampaignInvite[]
+  sessions   CampaignSession[]
+  maps       Map[]
+  characters Character[]
+
+  @@index([ownerUserId])
+  @@map("campaigns")
+}
+
+model CampaignMember {
+  id          String       @id @default(cuid())
+  campaignId  String       @map("campaign_id")
+  userId      String       @map("user_id")
+  role        CampaignRole @default(player)
+  displayName String?      @map("display_name")
+  joinedAt    DateTime     @default(now()) @map("joined_at")
+  lastSeenAt  DateTime?    @map("last_seen_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@index([campaignId])
+  @@index([userId])
+  @@map("campaign_members")
+}
+
+model CampaignInvite {
+  id              String       @id @default(cuid())
+  campaignId      String       @map("campaign_id")
+  code            String       @unique
+  roleOnJoin      CampaignRole @default(player) @map("role_on_join")
+  createdByUserId String       @map("created_by_user_id")
+  maxUses         Int?         @map("max_uses")
+  usesCount       Int          @default(0) @map("uses_count")
+  expiresAt       DateTime?    @map("expires_at")
+  revokedAt       DateTime?    @map("revoked_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  campaign  Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdBy User     @relation("CampaignInviteCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([createdByUserId])
+  @@map("campaign_invites")
+}
+
+model CampaignSession {
+  id              String                @id @default(cuid())
+  campaignId      String                @map("campaign_id")
+  activeMapId     String?               @map("active_map_id")
+  status          CampaignSessionStatus @default(active)
+  startedAt       DateTime              @default(now()) @map("started_at")
+  endedAt         DateTime?             @map("ended_at")
+  createdByUserId String                @map("created_by_user_id")
+
+  campaign  Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdBy User     @relation("CampaignSessionCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([createdByUserId])
+  @@index([activeMapId])
+  @@map("campaign_sessions")
+}
+
+model Map {
+  id         String @id @default(cuid())
+  campaignId String @map("campaign_id")
+  name       String
+
+  width    Int
+  height   Int
+  cellSize Int      @map("cell_size")
+  gridType GridType @default(square) @map("grid_type")
+
+  backgroundImage String? @map("background_image")
+
+  backgroundFitMode String @default("stretch") @map("background_fit_mode")
+  backgroundOffsetX Int    @default(0) @map("background_offset_x")
+  backgroundOffsetY Int    @default(0) @map("background_offset_y")
+  backgroundScale   Float  @default(1) @map("background_scale")
+
+  gridOffsetX Int    @default(0) @map("grid_offset_x")
+  gridOffsetY Int    @default(0) @map("grid_offset_y")
+  gridColor   String @default("#ffffff") @map("grid_color")
+  gridOpacity Float  @default(0.22) @map("grid_opacity")
+
+  fogEnabled            Boolean @default(false) @map("fog_enabled")
+  fogMode               String  @default("manual") @map("fog_mode")
+  fogOpacity            Float   @default(0.85) @map("fog_opacity")
+  fogPlayersSeeExplored Boolean @default(false) @map("fog_players_see_explored")
+
+  layerConfigJson Json? @map("layer_config_json")
+
+  sortOrder  Int       @default(0) @map("sort_order")
+  isArchived Boolean   @default(false) @map("is_archived")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  campaign Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tokens   MapToken[]
+
+  @@index([campaignId])
+  @@map("maps")
+}
+
+model MapToken {
+  id          String  @id @default(cuid())
+  mapId       String  @map("map_id")
+  characterId String? @map("character_id")
+
+  name  String?
+  image String?
+
+  x Int
+  y Int
+
+  widthCells  Int   @default(1) @map("width_cells")
+  heightCells Int   @default(1) @map("height_cells")
+  rotation    Float @default(0)
+
+  zIndex Int   @default(0) @map("z_index")
+  scaleX Float @default(1) @map("scale_x")
+  scaleY Float @default(1) @map("scale_y")
+
+  layerKey   String          @default("tokens") @map("layer_key")
+  visibility TokenVisibility @default(public)
+  isLocked   Boolean         @default(false) @map("is_locked")
+  isHidden   Boolean         @default(false) @map("is_hidden")
+
+  elevation Int    @default(0)
+  standMode String @default("auto") @map("stand_mode")
+
+  barsJson   Json? @map("bars_json")
+  statusJson Json? @map("status_json")
+  visionJson Json? @map("vision_json")
+  lightJson  Json? @map("light_json")
+
+  disposition TokenDisposition @default(neutral)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  map       Map        @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  character Character? @relation(fields: [characterId], references: [id], onDelete: SetNull)
+
+  @@index([mapId])
+  @@index([characterId])
+  @@map("map_tokens")
+}
+
+model Character {
+  id                String              @id @default(cuid())
+  campaignId        String              @map("campaign_id")
+  ownerUserId       String?             @map("owner_user_id")
+  createdByUserId   String              @map("created_by_user_id")
+  name              String
+  type              CharacterType       @default(pc)
+  visibility        CharacterVisibility @default(private)
+  portraitImage     String?             @map("portrait_image")
+  defaultTokenImage String?             @map("default_token_image")
+  system            String              @default("dnd5e")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  archivedAt        DateTime?           @map("archived_at")
+
+  campaign    Campaign              @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  sheet       CharacterSheet?
+  permissions CharacterPermission[]
+  tokens      MapToken[]
+
+  @@index([campaignId])
+  @@index([ownerUserId])
+  @@index([createdByUserId])
+  @@map("characters")
+}
+
+model CharacterSheet {
+  id                 String   @id @default(cuid())
+  characterId        String   @unique @map("character_id")
+  system             String   @default("dnd5e")
+  schemaVersion      Int      @default(1) @map("schema_version")
+  dataJson           Json     @map("data_json")
+  version            Int      @default(1)
+  lastEditedByUserId String?  @map("last_edited_by_user_id")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@map("character_sheets")
+}
+
+model CharacterPermission {
+  id          String  @id @default(cuid())
+  characterId String  @map("character_id")
+  userId      String  @map("user_id")
+  canView     Boolean @default(true) @map("can_view")
+  canEdit     Boolean @default(false) @map("can_edit")
+  canControl  Boolean @default(false) @map("can_control")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, userId])
+  @@index([characterId])
+  @@index([userId])
+  @@map("character_permissions")
+}

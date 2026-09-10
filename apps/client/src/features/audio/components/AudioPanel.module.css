@@ -1,0 +1,259 @@
+.panel {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 16px;
+  overflow: hidden;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.16), transparent 34%),
+    #171717;
+  color: #f8fafc;
+}
+
+.header {
+  display: grid;
+  gap: 4px;
+  border-bottom: 1px solid rgba(202, 138, 4, 0.28);
+  padding-bottom: 12px;
+}
+
+.kicker {
+  color: #f3c970;
+  font-family: Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 28px;
+}
+
+.header p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(124, 58, 237, 0.32);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.form label {
+  display: grid;
+  gap: 6px;
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.form input {
+  min-width: 0;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  background: rgba(5, 5, 8, 0.94);
+  color: #fff;
+  padding: 0 11px;
+  outline: none;
+}
+
+.form input:focus {
+  border-color: rgba(168, 85, 247, 0.9);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.22);
+}
+
+.formActions,
+.gmControls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.formActions button,
+.gmControls button,
+.playerVisibilityButton,
+.trackActions button {
+  height: 36px;
+  border: 1px solid rgba(202, 138, 4, 0.45);
+  border-radius: 7px;
+  background:
+    linear-gradient(180deg, rgba(124, 58, 237, 0.88), rgba(49, 46, 129, 0.94));
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.playerVisibilityButton {
+  width: 100%;
+  background:
+    linear-gradient(180deg, rgba(39, 24, 58, 0.96), rgba(7, 7, 10, 0.98)) !important;
+}
+
+.formActions button:disabled,
+.gmControls button:disabled,
+.trackActions button:disabled,
+.trackMain:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.warnButton {
+  background:
+    linear-gradient(180deg, rgba(63, 40, 20, 0.96), rgba(20, 18, 16, 0.98)) !important;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.error {
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  border-radius: 8px;
+  background: rgba(127, 29, 29, 0.24);
+  color: #fecaca;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.nowPlaying {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(202, 138, 4, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(39, 24, 58, 0.72), rgba(7, 7, 10, 0.92));
+}
+
+.nowPlaying span,
+.track small {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.nowPlaying strong {
+  color: #f8fafc;
+  font-family: Georgia, serif;
+  font-size: 18px;
+}
+
+.volumeControl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(124, 58, 237, 0.32);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.volumeControl span {
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.volumeControl input {
+  width: 100%;
+  accent-color: #a855f7;
+}
+
+.volumeControl strong {
+  color: #f3c970;
+  font-size: 12px;
+  text-align: right;
+}
+
+.queue {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding-right: 4px;
+  scrollbar-color: rgba(168, 85, 247, 0.75) rgba(255, 255, 255, 0.08);
+}
+
+.empty {
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 18px 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.track {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(8, 8, 10, 0.84);
+}
+
+.current {
+  border-color: rgba(168, 85, 247, 0.86);
+  box-shadow: 0 0 18px rgba(124, 58, 237, 0.22);
+}
+
+.trackMain {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+  padding: 9px 10px;
+}
+
+.trackMain strong,
+.trackMain small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trackIndex {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, 0.22);
+  border: 1px solid rgba(202, 138, 4, 0.34);
+  color: #f3c970;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.trackActions {
+  display: grid;
+  grid-template-columns: repeat(3, 30px);
+  gap: 4px;
+  padding-right: 8px;
+}
+
+.trackActions button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+}

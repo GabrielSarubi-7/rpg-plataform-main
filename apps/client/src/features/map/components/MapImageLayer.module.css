@@ -1,0 +1,120 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+.gmLayer {
+  overflow: visible;
+}
+
+.playerLayer {
+  overflow: hidden;
+}
+
+.imageFrame {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+.imageFrame img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.manageable {
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.manageable:active {
+  cursor: grabbing;
+}
+
+.staged {
+  opacity: 0.74;
+  outline: 1px dashed rgba(167, 139, 250, 0.9);
+  outline-offset: 3px;
+  filter: saturate(0.82);
+}
+
+.selected {
+  outline: 2px solid rgba(243, 201, 112, 0.96);
+  outline-offset: 3px;
+  filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.48));
+}
+
+.resizeHandle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 1px solid rgba(25, 18, 8, 0.92);
+  border-radius: 2px;
+  background: #f3c970;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.72),
+    0 2px 7px rgba(0, 0, 0, 0.55);
+  z-index: 2;
+}
+
+.resizeHandle:hover {
+  background: #fff1bd;
+}
+
+.nw {
+  left: -8px;
+  top: -8px;
+  cursor: nwse-resize;
+}
+
+.ne {
+  right: -8px;
+  top: -8px;
+  cursor: nesw-resize;
+}
+
+.se {
+  right: -8px;
+  bottom: -8px;
+  cursor: nwse-resize;
+}
+
+.sw {
+  left: -8px;
+  bottom: -8px;
+  cursor: nesw-resize;
+}
+
+.deleteButton {
+  position: absolute;
+  top: -36px;
+  right: -14px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(248, 113, 113, 0.72);
+  border-radius: 50%;
+  background: rgba(45, 10, 14, 0.96);
+  color: #fecaca;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.42);
+}
+
+.deleteButton:hover {
+  border-color: #fca5a5;
+  color: white;
+  background: rgba(127, 29, 29, 0.98);
+}

@@ -1,0 +1,119 @@
+.sidebar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: min(var(--right-sidebar-width, 520px), 100vw);
+  max-width: min(var(--right-sidebar-width, 520px), 100vw);
+  height: 100dvh;
+  background: #181818;
+  color: white;
+  border-left: 1px solid #333;
+  z-index: 520;
+  display: flex;
+  font-family: sans-serif;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition:
+    width 180ms ease,
+    max-width 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.collapsed {
+  width: 48px;
+  max-width: 48px;
+}
+
+.resizeHandle {
+  position: absolute;
+  left: -5px;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+  z-index: 2;
+}
+
+.resizeHandle::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(218, 171, 86, 0.28);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.resizeHandle:hover::after,
+.resizeHandle:focus-visible::after {
+  opacity: 1;
+}
+
+.tabRail {
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+  height: 100%;
+  background: #111;
+  border-right: 1px solid #2f2f2f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 6px;
+  gap: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tabButton,
+.collapseButton {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  padding: 0;
+}
+
+.tabButton:hover,
+.collapseButton:hover {
+  background: #222;
+  color: white;
+}
+
+.tabButtonActive {
+  background: #2a2a2a;
+  color: white;
+  border-color: #444;
+}
+
+.tabIcon {
+  line-height: 1;
+}
+
+.collapseButton {
+  margin-top: auto;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  max-width: calc(min(var(--right-sidebar-width, 520px), 100vw) - 48px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}

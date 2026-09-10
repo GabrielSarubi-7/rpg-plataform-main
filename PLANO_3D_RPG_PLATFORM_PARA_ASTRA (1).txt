@@ -1,0 +1,4324 @@
+RPG PLATFORM — PLANO MESTRE PARA IMPLEMENTAÇÃO DO 3D REAL
+Documento técnico de execução para o Astra
+Data da especificação: 2026-09-09
+
+======================================================================
+0. OBJETIVO DESTE DOCUMENTO
+======================================================================
+
+Este documento deve ser tratado como uma especificação de implementação.
+
+OBJETIVO PRINCIPAL:
+Transformar o RPG Platform em uma VTT capaz de renderizar e editar mapas 3D reais,
+sem destruir nem reescrever as funcionalidades que já existem no modo 2D/2.5D.
+
+O resultado desejado não é apenas um "mapa inclinado".
+O modo 3D deve possuir uma cena tridimensional real, com:
+- câmera em perspectiva;
+- eixos X/Y/Z;
+- profundidade real;
+- modelos GLB/GLTF;
+- luzes;
+- sombras;
+- paredes;
+- portas;
+- múltiplos andares;
+- objetos;
+- tokens 2D em billboarding;
+- tokens com modelos 3D;
+- raycasting;
+- seleção;
+- movimentação;
+- grid;
+- medição;
+- áreas de efeito;
+- Fog of War;
+- visibilidade;
+- eventos;
+- áudio espacial;
+- multiplayer;
+- permissões;
+- persistência;
+- ferramentas do GM;
+- editor de cena.
+
+REGRA MAIS IMPORTANTE:
+NÃO reescrever o projeto do zero.
+
+O RPG Platform já possui uma arquitetura full-stack útil e madura:
+React + TypeScript + Vite + Zustand + Socket.IO + Express + Prisma + PostgreSQL.
+Ela deve ser aproveitada.
+
+O 3D deve entrar como uma NOVA CAMADA DE RENDERIZAÇÃO e como uma evolução
+dos tipos de mapa/tokens, sem remover:
+- autenticação;
+- campanhas;
+- personagens;
+- fichas;
+- ações;
+- rolagens;
+- turnos;
+- chat;
+- áudio global;
+- mapas existentes;
+- tokens existentes;
+- Fog atual;
+- permissões;
+- Socket.IO existente;
+- persistência existente.
+
+O modo 2D precisa continuar funcionando durante toda a implementação.
+
+======================================================================
+1. RESUMO DO PROJETO ATUAL — LEIA ANTES DE ALTERAR QUALQUER COISA
+======================================================================
+
+O projeto é um monorepo com npm workspaces.
+
+Estrutura principal:
+
+rpg-plataform-main/
+  apps/
+    client/
+    server/
+  shared/
+
+CLIENT:
+- React 18
+- TypeScript
+- Vite
+- Zustand
+- socket.io-client
+
+SERVER:
+- Node.js
+- Express
+- Socket.IO
+- Prisma
+- PostgreSQL
+- JWT
+- bcrypt
+
+SHARED:
+- tipos comuns
+- regras de mapa
+- regras de token
+- targeting
+- multiplayer
+- regras de sistemas
+
+O frontend já é organizado por features:
+- actions
+- annotations
+- assets
+- audio
+- auth
+- campaigns
+- characters
+- chat
+- dice
+- game
+- lobby
+- map
+- tokens
+- turns
+- ui
+
+Essa organização deve ser mantida.
+
+======================================================================
+2. COMO O "2.5D" ATUAL FUNCIONA E POR QUE NÃO É 3D REAL
+======================================================================
+
+O modo atual usa projeção manual e transformações CSS.
+
+Arquivos importantes:
+
+apps/client/src/features/map/MapCanvas.tsx
+apps/client/src/features/map/hooks/useCamera.ts
+apps/client/src/features/map/utils/coords.ts
+apps/client/src/features/tokens/components/Token.tsx
+apps/client/src/features/tokens/components/TokenLayer.tsx
+
+A câmera atual possui:
+
+interface Camera {
+  centerX: number;
+  centerY: number;
+  zoom: number;
+  pitch: number;
+  yaw: number;
+}
+
+O mapa continua sendo um plano DOM 2D.
+
+O "3D" é simulado por:
+- perspective CSS;
+- rotateX;
+- rotateZ;
+- projeção manual worldToScreen;
+- profundidade simulada;
+- token projetado sobre a tela;
+- elevação convertida em pixels;
+- billboard simulado com CSS.
+
+Isso é útil como modo 2.5D, mas tem limitações estruturais:
+- não existe depth buffer real;
+- não existe geometria 3D real;
+- não existe raycasting 3D;
+- não existe oclusão física;
+- não existem luzes reais;
+- não existem sombras reais;
+- não existe carregamento de mesh GLB;
+- não existe camera PerspectiveCamera;
+- não existe scene graph 3D;
+- objetos não ocupam volume real;
+- paredes não bloqueiam câmera/luz por geometria;
+- diferentes andares são difíceis de representar corretamente;
+- colisões 3D ficariam artificiais;
+- efeitos visuais avançados seriam difíceis.
+
+CONCLUSÃO:
+Não tentar transformar esse renderer DOM/CSS em um engine 3D.
+Preservá-lo como modo "2.5d" legado.
+
+Criar um renderer 3D real em paralelo.
+
+======================================================================
+3. DECISÃO DE ENGINE
+======================================================================
+
+Foram consideradas quatro opções principais.
+
+----------------------------------------------------------------------
+3.1 THREE.JS PURO
+----------------------------------------------------------------------
+
+Vantagens:
+- controle completo;
+- biblioteca madura;
+- WebGL/WebGPU;
+- enorme ecossistema;
+- GLTF;
+- iluminação;
+- animações;
+- raycasting;
+- shaders;
+- pós-processamento.
+
+Desvantagens:
+- integração mais imperativa com React;
+- mais trabalho para sincronizar lifecycle;
+- mais código manual para componentes.
+
+Bom tecnicamente, mas não é a opção ideal para este projeto React.
+
+----------------------------------------------------------------------
+3.2 THREE.JS + REACT THREE FIBER
+----------------------------------------------------------------------
+
+RECOMENDAÇÃO PRINCIPAL.
+
+React Three Fiber é um renderer React para Three.js.
+
+Vantagens específicas para este projeto:
+- o frontend já é React;
+- funciona com Zustand;
+- permite componentes declarativos;
+- permite reutilizar o estado atual;
+- eventos de pointer/raycast são integrados;
+- integração natural com componentes;
+- excelente ecossistema;
+- Drei fornece câmera, TransformControls, helpers, Html, Environment etc.;
+- continua permitindo acessar Three.js diretamente;
+- não exige reconstruir a UI da plataforma;
+- permite manter UI HTML sobre o Canvas;
+- pode ser lazy-loaded.
+
+Compatibilidade:
+O projeto usa React 18.
+Portanto NÃO instalar automaticamente a versão mais nova do R3F se ela exigir React 19.
+
+Usar:
+- @react-three/fiber v8 para React 18;
+- @react-three/drei v9 para a linha React 18;
+- se Rapier for usado, @react-three/rapier v1 para React 18.
+
+Comando base sugerido:
+
+npm install -w client three @types/three @react-three/fiber@8 @react-three/drei@9 three-mesh-bvh
+
+Física opcional, somente quando chegar à fase de colisões/objetos físicos:
+
+npm install -w client @react-three/rapier@1
+
+NÃO adicionar Rapier na primeira etapa sem necessidade.
+
+----------------------------------------------------------------------
+3.3 BABYLON.JS
+----------------------------------------------------------------------
+
+Babylon é excelente e possui muitas funcionalidades "batteries included":
+- WebGL/WebGPU;
+- câmeras;
+- iluminação;
+- física;
+- Havok;
+- partículas;
+- GUI;
+- picking;
+- áudio;
+- animação;
+- ferramentas.
+
+Seria uma boa escolha se o projeto estivesse começando do zero como um jogo 3D.
+
+Não é a primeira escolha aqui porque:
+- introduziria um segundo modelo arquitetural grande;
+- a integração com o React atual seria menos natural;
+- exigiria mais adaptação de stores/componentes;
+- o projeto já tem um bom shell de VTT que não precisa ser substituído.
+
+----------------------------------------------------------------------
+3.4 PLAYCANVAS
+----------------------------------------------------------------------
+
+PlayCanvas em 2026 possui:
+- WebGL2;
+- WebGPU;
+- React integration;
+- engine próprio;
+- editor visual;
+- PBR;
+- pós-processamento;
+- recursos modernos.
+
+É forte para experiências 3D completas e projetos criados em torno do próprio engine.
+
+Não é a recomendação principal porque o RPG Platform já tem:
+- editor próprio;
+- sockets próprios;
+- stores;
+- mapas;
+- fichas;
+- regras;
+- UI;
+- backend.
+
+Adotar PlayCanvas como núcleo empurraria o projeto para uma arquitetura centrada
+no engine em vez de aproveitar a arquitetura React já existente.
+
+----------------------------------------------------------------------
+3.5 UNITY/GODOT EXPORTADO PARA WEB
+----------------------------------------------------------------------
+
+NÃO usar.
+
+Motivos:
+- bundle muito maior;
+- runtime separado;
+- integração ruim com a UI React existente;
+- duplicação de estado;
+- sockets e autenticação mais difíceis;
+- deployment mais complexo;
+- risco de transformar uma VTT web modular em dois aplicativos colados.
+
+----------------------------------------------------------------------
+3.6 DECISÃO FINAL
+----------------------------------------------------------------------
+
+USAR:
+
+Three.js
++
+React Three Fiber
++
+Drei
+
+Adicionar gradualmente:
+- three-mesh-bvh para raycast e consultas espaciais complexas;
+- Rapier opcional para física local, nunca como autoridade do multiplayer;
+- GLTFLoader/useGLTF;
+- DRACO/Meshopt para modelos;
+- KTX2 para texturas;
+- pós-processamento apenas após o core estar estável.
+
+======================================================================
+4. WEBGL OU WEBGPU
+======================================================================
+
+Para a primeira versão de produção:
+
+USAR WebGLRenderer.
+
+Motivo:
+Three.js já possui WebGPURenderer moderno com fallback para WebGL 2,
+mas o próprio projeto Three ainda trata essa linha como experimental em alguns
+cenários e existem diferenças de materiais/pós-processamento.
+
+A arquitetura deve ser preparada para trocar o renderer futuramente.
+
+Criar algo como:
+
+scene3d/renderer/createRenderer.ts
+
+Primeiro:
+- WebGLRenderer padrão do R3F.
+
+Futuro:
+- opção experimental "WebGPU";
+- feature flag;
+- detectar compatibilidade;
+- nunca quebrar WebGL 2.
+
+NÃO bloquear o projeto esperando WebGPU.
+
+======================================================================
+5. REGRA DE MIGRAÇÃO
+======================================================================
+
+Astra deve seguir esta regra durante toda a execução:
+
+1. O modo 2D continua funcionando.
+2. O modo 2.5D continua funcionando.
+3. O novo modo 3D é adicionado como terceira opção.
+4. Mapas antigos abrem normalmente.
+5. Um mapa antigo pode entrar em 3D usando uma representação básica automática.
+6. Não apagar dados antigos.
+7. Qualquer schema novo precisa aceitar dados legados.
+8. Não criar uma mega-refatoração antes de ter um Canvas 3D funcional.
+9. Executar typecheck/build após cada etapa relevante.
+10. Só remover código antigo quando houver substituição comprovadamente equivalente.
+
+======================================================================
+6. PRIMEIRA ALTERAÇÃO DE UI
+======================================================================
+
+Arquivo:
+
+apps/client/src/features/ui/store/uiStore.ts
+
+Hoje:
+
+export type CameraMode = "2d" | "2.5d";
+
+Alterar para:
+
+export type CameraMode = "2d" | "2.5d" | "3d";
+
+readCameraMode() também deve aceitar "3d".
+
+GameSettingsPanel.tsx deve mostrar:
+
+[ 2D ] [ 2.5D ] [ 3D ]
+
+Texto:
+
+2D:
+"VTT clássico de cima."
+
+2.5D:
+"Mapa 2D com perspectiva simulada."
+
+3D:
+"Cena tridimensional real com câmera, luzes, modelos e profundidade."
+
+IMPORTANTE:
+A configuração é uma preferência de visualização do usuário, não precisa
+forçar todos os jogadores a usar o mesmo renderer.
+
+Pode existir no futuro uma propriedade do mapa:
+- supports3d;
+- preferredViewMode.
+
+Mas a preferência local deve continuar possível.
+
+======================================================================
+7. CRIAR FEATURE 3D SEPARADA
+======================================================================
+
+Não colocar todo o 3D dentro do MapCanvas.tsx.
+
+Criar:
+
+apps/client/src/features/scene3d/
+
+Estrutura sugerida:
+
+scene3d/
+  components/
+    Scene3DCanvas.tsx
+    Scene3DRoot.tsx
+    Scene3DLoadingOverlay.tsx
+
+  camera/
+    SceneCamera.tsx
+    CameraController.tsx
+    CameraBookmarks.tsx
+    cameraTypes.ts
+
+  map/
+    GroundPlane3D.tsx
+    Grid3D.tsx
+    Terrain3D.tsx
+    Walls3D.tsx
+    Doors3D.tsx
+    Floors3D.tsx
+    MapImages3D.tsx
+
+  tokens/
+    Token3DLayer.tsx
+    Token3D.tsx
+    BillboardToken3D.tsx
+    FlatToken3D.tsx
+    ModelToken3D.tsx
+    TokenSelectionRing3D.tsx
+    TokenOverlay3D.tsx
+
+  objects/
+    SceneObject3D.tsx
+    SceneObjectModel.tsx
+    PrimitiveObject3D.tsx
+    SceneObjectsLayer.tsx
+
+  lights/
+    SceneLights3D.tsx
+    TokenLight3D.tsx
+
+  fog/
+    FogOfWar3D.tsx
+    Visibility3D.tsx
+
+  actions/
+    ActionPreview3D.tsx
+    Measurement3D.tsx
+
+  editor/
+    SceneEditor3D.tsx
+    SceneTransformControls.tsx
+    SceneObjectLibrary.tsx
+    SceneObjectInspector.tsx
+    SceneLightInspector.tsx
+    SceneEnvironmentInspector.tsx
+
+  interactions/
+    InteractiveObject3D.tsx
+    DoorInteraction3D.tsx
+
+  effects/
+    SceneEffects3D.tsx
+    ActionEffect3D.tsx
+    Weather3D.tsx
+
+  audio/
+    SpatialAudio3D.tsx
+
+  store/
+    scene3dStore.ts
+    sceneEditorStore.ts
+
+  services/
+    scene3dSocketService.ts
+
+  utils/
+    coordinates3d.ts
+    scene3dNormalization.ts
+    scene3dPicking.ts
+    scene3dQuality.ts
+
+  types/
+    scene3dTypes.ts
+
+Evitar um componente gigante.
+
+======================================================================
+8. LAZY LOAD
+======================================================================
+
+O renderer 3D deve ser carregado apenas quando necessário.
+
+Motivo:
+Three.js e o ecossistema 3D aumentam o bundle.
+
+Fazer algo semelhante a:
+
+const Scene3DCanvas = lazy(() => import("@/features/scene3d/components/Scene3DCanvas"));
+
+Quando cameraMode !== "3d":
+- não carregar o chunk 3D.
+
+Isso preserva o carregamento rápido do modo 2D.
+
+======================================================================
+9. INTEGRAÇÃO COM MAPCANVAS
+======================================================================
+
+MapCanvas atualmente possui muita regra de negócio útil:
+- usuário;
+- role;
+- mapa;
+- tokens;
+- personagens;
+- targeting;
+- turnos;
+- socket;
+- permissões;
+- handlers.
+
+NÃO duplicar centenas de linhas sem necessidade.
+
+Primeira abordagem segura:
+
+Dentro do MapCanvas, depois dos hooks e handlers existentes, renderizar:
+
+if (cameraMode === "3d") {
+  return (
+    <Scene3DCanvas
+      mapSettings={...}
+      tokens={tokens}
+      characters={characters}
+      ...
+    />
+  );
+}
+
+Passar callbacks já existentes sempre que possível:
+- mover token;
+- selecionar;
+- context menu;
+- usar ação;
+- atualizar token.
+
+Depois que estiver estável, extrair um hook de runtime compartilhado:
+
+useTabletopRuntime()
+
+Ele pode concentrar:
+- role;
+- isGm;
+- canControlToken;
+- currentTurnTokenId;
+- currentMapIsLive;
+- authToken;
+- lobbyCode;
+- personagens;
+- tokens;
+- action state.
+
+NÃO começar com uma refatoração gigantesca.
+Primeiro colocar 3D na tela.
+
+======================================================================
+10. SISTEMA DE COORDENADAS
+======================================================================
+
+Essa decisão precisa ser consistente em TODO o projeto.
+
+Usar padrão Three.js:
+
+X = horizontal
+Y = altura
+Z = profundidade
+
+Definir:
+
+1 unidade Three.js = 1 célula do grid.
+
+O mapa atual usa:
+- token.x em pixels;
+- token.y em pixels;
+- cellSize em pixels;
+- elevation em pés;
+- D&D atual considera 1 célula = 5 ft.
+
+Conversão recomendada.
+
+LEGACY -> 3D
+
+Para um token:
+
+tokenWidthPx = widthCells * cellSize
+tokenHeightPx = heightCells * cellSize
+
+centerXCells = (token.x + tokenWidthPx / 2) / cellSize
+centerZCells = (token.y + tokenHeightPx / 2) / cellSize
+
+worldX = centerXCells
+worldZ = centerZCells
+worldY = elevationFt / feetPerCell
+
+No sistema atual:
+feetPerCell = 5
+
+Portanto:
+
+worldY = elevation / 5
+
+3D -> LEGACY
+
+token.x = worldX * cellSize - tokenWidthPx / 2
+token.y = worldZ * cellSize - tokenHeightPx / 2
+token.elevation = worldY * feetPerCell
+
+Criar funções em:
+
+scene3d/utils/coordinates3d.ts
+
+Exemplo:
+
+legacyTokenToWorldPosition(token, cellSize)
+worldPositionToLegacyToken(...)
+feetToWorldUnits(feet)
+worldUnitsToFeet(units)
+pixelsToWorldUnits(px, cellSize)
+worldUnitsToPixels(units, cellSize)
+
+NÃO duplicar essas fórmulas em componentes diferentes.
+
+======================================================================
+11. NÃO MUDAR O TARGETING DO COMBATE NO PRIMEIRO MOMENTO
+======================================================================
+
+O projeto já possui:
+
+shared/rules/targetingRules.ts
+
+Ele calcula:
+- círculo;
+- quadrado;
+- cone;
+- linha;
+- single target;
+- melee;
+- esfera conceitual;
+- cilindro conceitual.
+
+Hoje ele trabalha em X/Y do mapa e usa pixelsPerFoot.
+
+IMPORTANTE:
+Na primeira versão 3D, manter o targeting autoritativo EXISTENTE.
+
+O renderer 3D:
+1. faz raycast no chão;
+2. converte worldX/worldZ para pixel X/Y;
+3. chama resolveActionTargeting existente;
+4. usa affectedTokenIds retornados;
+5. apenas RENDERIZA o preview em 3D.
+
+Isso evita que o modo 2D e 3D tenham regras diferentes.
+
+Exemplo:
+- uma Fireball em 3D pode ser mostrada como esfera;
+- mas a seleção dos alvos continua usando a lógica existente na primeira fase.
+
+Fase futura:
+criar targetingRules3d.ts com altura real e volume 3D.
+
+Só ativar targeting 3D completo com opção explícita.
+Não alterar silenciosamente a regra de combate das campanhas antigas.
+
+======================================================================
+12. MAPLAYERCONFIG — PONTO CRÍTICO
+======================================================================
+
+Arquivo:
+
+shared/types/map.ts
+
+Hoje:
+
+interface MapLayerConfig {
+  version: 1;
+  terrainCells;
+  walls;
+  objects;
+  images;
+  fogOfWar;
+}
+
+E normalizeMapLayerConfig() reconstrói apenas esses campos.
+
+ATENÇÃO:
+Se simplesmente adicionar "scene3d" no JSON do banco sem atualizar o normalizador,
+o projeto poderá APAGAR os campos desconhecidos na próxima persistência.
+
+ANTES DE SALVAR QUALQUER DADO 3D:
+expandir o tipo e o normalizador.
+
+Proposta:
+
+export interface MapLayerConfig {
+  version: 1 | 2;
+  terrainCells: Record<string, TerrainCell>;
+  walls: WallSegment[];
+  objects: MapObject[];
+  images: MapImage[];
+  fogOfWar: FogOfWarConfig;
+  scene3d?: Scene3DConfig;
+}
+
+O normalizador deve:
+- aceitar config V1;
+- transformar em estrutura válida;
+- preencher scene3d com defaults;
+- retornar V2 em memória, ou manter V1 e adicionar scene3d opcional;
+- nunca descartar dados conhecidos da nova versão.
+
+Recomendação:
+normalizar tudo para version 2 no runtime.
+
+Persistência antiga é migrada automaticamente ao salvar.
+
+======================================================================
+13. TIPOS 3D RECOMENDADOS
+======================================================================
+
+Criar tipos compartilhados preferencialmente em:
+
+shared/types/scene3d.ts
+
+Não colocar tipos essenciais somente no client, pois o server precisará validar.
+
+Base:
+
+export interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface Euler3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface Transform3D {
+  position: Vec3;
+  rotation: Euler3;
+  scale: Vec3;
+}
+
+export type SceneVisibility =
+  | "public"
+  | "gm"
+  | "hidden";
+
+export type SceneColliderType =
+  | "none"
+  | "box"
+  | "cylinder"
+  | "mesh";
+
+export interface SceneCollider3D {
+  type: SceneColliderType;
+  blocksMovement: boolean;
+  blocksVision: boolean;
+  blocksLight: boolean;
+  size?: Vec3;
+  offset?: Vec3;
+}
+
+export type SceneObjectKind =
+  | "model"
+  | "primitive"
+  | "door"
+  | "window"
+  | "stairs"
+  | "prop"
+  | "trigger"
+  | "sound"
+  | "effect";
+
+export interface SceneObject3DConfig {
+  id: string;
+  name: string;
+  kind: SceneObjectKind;
+
+  assetUrl?: string;
+  primitive?: "box" | "sphere" | "cylinder" | "plane";
+
+  transform: Transform3D;
+
+  floorId?: string;
+
+  visibility: SceneVisibility;
+
+  collider?: SceneCollider3D;
+
+  castShadow?: boolean;
+  receiveShadow?: boolean;
+
+  interaction?: SceneInteractionConfig;
+
+  tags?: string[];
+}
+
+======================================================================
+14. CONFIGURAÇÃO GERAL DA CENA
+======================================================================
+
+Proposta:
+
+export interface Scene3DConfig {
+  enabled: boolean;
+
+  world: {
+    unitsPerCell: 1;
+    distancePerCell: number;
+    distanceUnit: "ft" | "m";
+  };
+
+  environment: SceneEnvironment3D;
+
+  floors: SceneFloor3D[];
+  objects: SceneObject3DConfig[];
+  lights: SceneLight3D[];
+  cameraBookmarks: SceneCameraBookmark[];
+  spatialAudio: SceneSpatialAudioSource[];
+  events: SceneEvent3D[];
+
+  settings: {
+    gridVisible: boolean;
+    snapEnabled: boolean;
+    snapSize: number;
+    shadowsEnabled: boolean;
+    quality: "low" | "medium" | "high";
+  };
+}
+
+Para D&D:
+distancePerCell = 5
+distanceUnit = "ft"
+
+IMPORTANTE:
+Hoje várias regras assumem 5 pés por célula.
+Não tentar generalizar toda a plataforma para metros durante a primeira implementação.
+Apenas preparar a estrutura.
+
+======================================================================
+15. AMBIENTE 3D
+======================================================================
+
+export interface SceneEnvironment3D {
+  backgroundColor: string;
+
+  ambientLight: {
+    enabled: boolean;
+    color: string;
+    intensity: number;
+  };
+
+  directionalLight?: {
+    enabled: boolean;
+    color: string;
+    intensity: number;
+    position: Vec3;
+    castShadow: boolean;
+  };
+
+  fog?: {
+    enabled: boolean;
+    color: string;
+    near: number;
+    far: number;
+  };
+
+  skyboxUrl?: string;
+
+  exposure?: number;
+}
+
+Defaults:
+- background escuro;
+- hemisphere/ambient light fraca;
+- uma directional light;
+- sombras moderadas;
+- sem pós-processamento pesado.
+
+======================================================================
+16. PRIMEIRO MILESTONE VISUAL
+======================================================================
+
+Antes de editor, luz avançada ou modelos:
+
+Fazer aparecer um mapa antigo no 3D.
+
+Scene3DCanvas precisa renderizar:
+
+1. Canvas R3F;
+2. PerspectiveCamera;
+3. câmera controlável;
+4. plano de chão;
+5. imagem de background existente aplicada ao chão;
+6. grid;
+7. tokens atuais;
+8. tokens selecionáveis;
+9. movimento de token;
+10. modo billboard;
+11. elevação;
+12. troca entre 2D e 3D.
+
+Se isso funcionar, a fundação está correta.
+
+======================================================================
+17. GROUND PLANE
+======================================================================
+
+O mapa atual possui:
+
+widthCells
+heightCells
+cellSize
+backgroundImage
+
+No 3D:
+o tamanho físico da malha deve ser:
+
+width = widthCells
+depth = heightCells
+
+Criar PlaneGeometry ou BoxGeometry bem fino.
+
+Orientação:
+plano horizontal X/Z.
+
+A imagem do mapa deve virar texture.
+
+Cuidado com UV:
+a imagem precisa preservar a mesma orientação do modo 2D.
+
+Se ficar invertida verticalmente, ajustar texture.flipY ou UV, não inverter
+o sistema de coordenadas inteiro.
+
+O plano deve:
+- receiveShadow = true;
+- ser raycastable;
+- ter userData identificando que é ground;
+- ser usado para movimentação.
+
+======================================================================
+18. GRID 3D
+======================================================================
+
+Criar Grid3D.
+
+Pode usar helper de Drei inicialmente.
+
+Deve respeitar:
+- widthCells;
+- heightCells;
+- 1 unidade = 1 célula;
+- opção mostrar/ocultar;
+- cor;
+- opacidade.
+
+No futuro aproveitar campos já presentes no Prisma:
+- gridColor;
+- gridOpacity;
+- gridOffsetX;
+- gridOffsetY.
+
+Não implementar grid infinito.
+O grid deve representar os limites reais do mapa.
+
+======================================================================
+19. CÂMERA 3D
+======================================================================
+
+Usar PerspectiveCamera.
+
+Recomendação de controle:
+usar CameraControls disponível no ecossistema Drei/camera-controls.
+
+Comportamento desejado:
+
+LMB:
+- selecionar;
+- mover tokens/objetos quando em ferramenta adequada.
+
+RMB:
+- pan/truck, preservando a sensação da VTT atual.
+
+MMB ou Alt + RMB:
+- orbit/rotação.
+
+Scroll:
+- aproximar/afastar.
+
+Teclas opcionais:
+- F: focar seleção;
+- Home: enquadrar mapa;
+- 1: visão superior;
+- 2: visão isométrica;
+- 3: visão baixa/cinematográfica.
+
+Câmera precisa:
+- ter target;
+- impedir near/far inadequados;
+- limitar distância mínima;
+- limitar distância máxima;
+- evitar entrar abaixo do chão por padrão;
+- permitir GM desativar limites em modo edição.
+
+======================================================================
+20. CAMERA BOOKMARKS
+======================================================================
+
+Implementar posições salvas.
+
+interface SceneCameraBookmark {
+  id: string;
+  name: string;
+  position: Vec3;
+  target: Vec3;
+  fov: number;
+}
+
+GM:
+- salvar câmera;
+- renomear;
+- apagar;
+- ativar.
+
+Exemplos:
+- Visão geral;
+- Corredor;
+- Laboratório;
+- Criatura;
+- Entrada.
+
+Ativar bookmark deve interpolar suavemente posição e target.
+
+Futuro:
+GM pode transmitir uma câmera cinematográfica aos jogadores.
+
+======================================================================
+21. CAMERA BROADCAST
+======================================================================
+
+NÃO sincronizar a câmera de todos o tempo inteiro.
+
+Criar um evento opcional:
+
+scene3d:camera:broadcast
+
+Payload:
+{
+  roomCode,
+  authToken,
+  bookmarkId? ,
+  position,
+  target,
+  fov,
+  durationMs
+}
+
+Somente GM/owner.
+
+Jogadores:
+- recebem animação cinematográfica;
+- podem ter botão "Liberar câmera" depois;
+- não ficar presos permanentemente.
+
+Não salvar cada movimento de câmera no servidor.
+
+======================================================================
+22. TOKENS 3D — APROVEITAR O QUE JÁ EXISTE
+======================================================================
+
+Token atual possui:
+- id;
+- x;
+- y;
+- image;
+- characterId;
+- name;
+- widthCells;
+- heightCells;
+- showHealthBar;
+- conditions;
+- elevation;
+- standMode.
+
+Prisma MapToken já possui mais campos:
+- rotation;
+- zIndex;
+- scaleX;
+- scaleY;
+- visibility;
+- isLocked;
+- isHidden;
+- elevation;
+- standMode;
+- visionJson;
+- lightJson;
+- disposition.
+
+MUITO IMPORTANTE:
+Boa parte da infraestrutura necessária já existe no banco.
+
+Não criar campos duplicados sem necessidade.
+
+Primeiro expandir shared Token para expor gradualmente:
+- rotation;
+- isHidden;
+- visibility;
+- vision;
+- light;
+- disposition.
+
+Atualizar:
+mapDbTokenToClientToken()
+persistência de token
+payloads Socket.IO
+normalizadores.
+
+======================================================================
+23. MODOS DE REPRESENTAÇÃO DO TOKEN
+======================================================================
+
+O modo 3D deve aceitar:
+
+1. FLAT
+Arte deitada no chão.
+
+2. BILLBOARD
+Arte 2D sempre virada para a câmera.
+
+3. STANDEE
+Arte 2D vertical, mas mantendo Y para cima e girando apenas ao redor do eixo Y.
+É preferível para miniaturas porque não "deita" ao olhar de cima.
+
+4. MODEL3D
+Modelo GLB real.
+
+Proposta:
+
+type TokenRepresentation3D =
+  | "flat"
+  | "billboard"
+  | "standee"
+  | "model3d";
+
+Mapear standMode atual:
+- flat -> flat
+- billboard -> standee ou billboard
+- auto -> standee no 3D
+
+Adicionar override opcional.
+
+======================================================================
+24. BILLBOARD/ STANDEE
+======================================================================
+
+Para arte 2D:
+- criar PlaneGeometry;
+- material transparente;
+- texture da imagem;
+- alphaTest pequeno para reduzir problemas de transparência;
+- base circular no chão;
+- selection ring;
+- sombra simples ou shadow real.
+
+STANDEE:
+rotacionar apenas yaw para encarar a câmera.
+
+BILLBOARD:
+encarar câmera em todos eixos.
+
+Não usar componente HTML para o corpo principal do token.
+
+======================================================================
+25. MODELO 3D DE PERSONAGEM
+======================================================================
+
+Adicionar suporte opcional a:
+
+Character:
+- defaultTokenModelUrl;
+
+ou dentro da ficha:
+- token3d.modelUrl.
+
+MapToken:
+- modelUrl override opcional.
+
+Prioridade:
+1. model do token;
+2. model do personagem;
+3. sprite/billboard;
+4. imagem padrão;
+5. placeholder.
+
+Carregar GLB usando useGLTF/GLTFLoader.
+
+Animações futuras:
+- idle;
+- walk;
+- run;
+- attack;
+- hit;
+- death.
+
+Não exigir animação para um modelo funcionar.
+
+======================================================================
+26. MOVIMENTAÇÃO DE TOKEN EM 3D
+======================================================================
+
+Fluxo:
+
+1. pointerDown no token;
+2. verificar canControlToken();
+3. iniciar drag local;
+4. raycast do cursor contra superfície de movimento;
+5. obter X/Z;
+6. aplicar snap se ativado;
+7. converter X/Z para legacy token.x/token.y;
+8. atualizar preview local;
+9. ao soltar:
+   - clamp;
+   - enviar token:move existente;
+   - server valida;
+   - persistir;
+   - sincronizar.
+
+IMPORTANTE:
+No primeiro milestone, emitir a movimentação final como hoje.
+
+Depois pode ser adicionado preview multiplayer throttled.
+
+Não emitir 60 eventos por segundo sem necessidade.
+
+======================================================================
+27. SNAP
+======================================================================
+
+Modos:
+
+- grid inteiro;
+- meio grid;
+- livre.
+
+Configuração:
+
+snapEnabled: boolean
+snapSize: 1 | 0.5 | 0.25
+
+Para grid inteiro:
+round(world / 1) + offset adequado ao centro do token.
+
+Tokens maiores precisam ser centralizados corretamente.
+
+======================================================================
+28. ALTURA / ELEVAÇÃO
+======================================================================
+
+O projeto já trata elevation em ft.
+
+No 3D:
+Y = elevation / 5 para D&D atual.
+
+Preservar botões +5 / -5 ft.
+
+Adicionar opcionalmente:
+- arrastar verticalmente com modificador de teclado;
+- campo numérico;
+- selecionar andar.
+
+NÃO substituir elevation por pixel.
+
+======================================================================
+29. PAREDES EXISTENTES
+======================================================================
+
+WallSegment já contém:
+- x;
+- y;
+- orientation;
+- height;
+- material.
+
+Isso é perfeito para gerar paredes 3D procedurais.
+
+Converter:
+
+horizontal:
+- largura = 1 célula;
+- espessura ~0.08;
+- altura = wall.height / 5;
+- posicionada na borda correspondente.
+
+vertical:
+- profundidade = 1 célula;
+- espessura ~0.08.
+
+Materiais:
+- stone;
+- wood;
+- metal;
+- force.
+
+Fase inicial:
+cores/materials simples.
+
+Futuro:
+textures PBR.
+
+Parede deve possuir semanticamente:
+- blocksMovement;
+- blocksVision;
+- blocksLight.
+
+======================================================================
+30. PERFORMANCE DE PAREDES
+======================================================================
+
+Não criar centenas de componentes caros se o mapa for grande.
+
+Agrupar paredes por:
+- material;
+- geometria.
+
+Usar InstancedMesh quando possível.
+
+Instancing reduz draw calls.
+
+Uma parede selecionável/editável individualmente pode:
+- ter instanceId;
+- mapear instanceId -> wall.id.
+
+No modo editor pode ser aceitável usar meshes individuais para o item selecionado
+e instancing no restante.
+
+======================================================================
+31. TERRENO EXISTENTE
+======================================================================
+
+TerrainCell possui:
+- x;
+- y;
+- type;
+- height.
+
+No 3D:
+renderizar células como tiles/boxes.
+
+Altura:
+interpretar como unidade de altura já usada pelo mapa.
+Para D&D/estrutura atual, uma opção coerente é:
+worldHeight = height / 5
+quando o valor estiver representando pés.
+
+Antes de fixar isso, verificar como o editor atual usa height.
+Não quebrar os mapas já criados.
+
+Tipos:
+- stone;
+- grass;
+- dirt;
+- wood;
+- water;
+- lava;
+- snow;
+- void.
+
+Agrupar por tipo e usar InstancedMesh.
+
+Água/lava animadas são fase posterior.
+
+======================================================================
+32. OBJETOS EXISTENTES
+======================================================================
+
+MapObject possui:
+- x;
+- y;
+- widthCells;
+- heightCells;
+- elevation;
+- height;
+- type.
+
+Tipos existentes:
+- rock;
+- tree;
+- crate;
+- pillar;
+- door;
+- bridge;
+- stairs;
+- platform;
+- campfire;
+- custom.
+
+Criar representação 3D procedural básica imediatamente.
+
+Isso faz com que mapas 2D/2.5D existentes ganhem volume em 3D sem migração manual.
+
+Exemplos:
+rock -> low-poly sphere/icosahedron
+tree -> cylinder + cone
+crate -> box
+pillar -> cylinder
+door -> box fino
+bridge -> box
+stairs -> degraus simples
+platform -> box
+campfire -> emissive + particle futuro
+custom -> box placeholder
+
+Depois o GM pode substituir por um GLB.
+
+======================================================================
+33. NOVOS OBJETOS 3D
+======================================================================
+
+SceneObject3DConfig deve permitir modelos livres com Transform3D.
+
+Transform:
+- position;
+- rotation;
+- scale.
+
+No editor:
+- Translate;
+- Rotate;
+- Scale.
+
+Snap:
+- posição por grid;
+- rotação em 15° ou 45°;
+- escala opcional.
+
+======================================================================
+34. TRANSFORMCONTROLS
+======================================================================
+
+Usar TransformControls do ecossistema R3F/Drei no modo GM.
+
+Regras:
+- aparecer somente quando um objeto está selecionado;
+- desabilitar orbit/pan enquanto arrasta gizmo;
+- atualizar localmente durante drag;
+- persistir no dragEnd;
+- emitir update multiplayer throttled ou apenas no final.
+
+Ferramentas:
+W = translate
+E = rotate
+R = scale
+Delete = remover
+Ctrl+D = duplicar
+
+Não capturar essas teclas quando usuário estiver digitando em input/textarea.
+
+======================================================================
+35. ASSET PIPELINE PARA GLB
+======================================================================
+
+O asset system atual suporta imagens e áudio.
+
+assetRoutes aceita:
+- image/*
+- audio/*
+- application/octet-stream
+
+PORÉM assetService usa uma allowlist MIME que hoje não contém GLB.
+Portanto application/octet-stream acaba não sendo aceito pelo save.
+
+ALTERAR cuidadosamente.
+
+Adicionar MIME:
+- model/gltf-binary -> glb
+- model/gltf+json -> gltf (opcional)
+
+RECOMENDAÇÃO:
+Na primeira versão aceitar apenas GLB.
+
+Por quê:
+GLB é um arquivo único.
+.gltf pode depender de:
+- .bin;
+- texturas externas;
+- múltiplos arquivos.
+
+Isso complicaria armazenamento.
+
+Suportar também application/octet-stream SOMENTE se:
+- filename terminar em .glb;
+- cabeçalho do arquivo for validado.
+
+Validar magic do GLB:
+primeiros bytes correspondem a "glTF".
+
+Não aceitar arquivo arbitrário disfarçado.
+
+======================================================================
+36. LIMITE DE UPLOAD 3D
+======================================================================
+
+Hoje o limite padrão é 24 MB.
+
+Não aumentar indiscriminadamente.
+
+Criar configuração:
+MODEL_ASSET_UPLOAD_LIMIT
+
+Sugestão inicial:
+50 MB servidor,
+mas orientar assets finais para muito menos.
+
+Um modelo individual ideal para VTT web deve ser otimizado.
+
+Não permitir modelos de centenas de MB.
+
+======================================================================
+37. BIBLIOTECA DE ASSETS 3D
+======================================================================
+
+Fase inicial:
+SceneObject pode referenciar diretamente /assets/hash.glb.
+
+Fase posterior:
+criar model Asset no Prisma.
+
+Exemplo:
+
+model Asset {
+  id          String   @id @default(cuid())
+  campaignId  String?
+  uploadedBy  String
+  kind        String
+  name        String
+  url         String
+  hash        String
+  mimeType    String
+  bytes       Int
+  metadataJson Json?
+  createdAt   DateTime @default(now())
+}
+
+kind:
+- image
+- audio
+- model3d
+- texture
+- environment
+
+Benefícios:
+- biblioteca;
+- busca;
+- preview;
+- metadados;
+- reaproveitamento;
+- deleção controlada;
+- ownership.
+
+Não é obrigatório para o milestone 1.
+
+======================================================================
+38. GLTF/GLB
+======================================================================
+
+Formato padrão:
+GLB/glTF 2.0.
+
+Pipeline de otimização recomendado:
+- Meshopt ou Draco para geometria;
+- KTX2/Basis para texturas;
+- limitar resolução de textura;
+- remover meshes invisíveis;
+- reduzir materiais;
+- reduzir draw calls.
+
+Three.js suporta GLTFLoader com extensões modernas.
+
+Não inventar formato proprietário para modelos.
+
+======================================================================
+39. LIGHTING
+======================================================================
+
+Primeiro:
+- ambient/hemisphere;
+- uma directional light;
+- shadow map.
+
+Depois:
+SceneLight3D.
+
+interface SceneLight3D {
+  id: string;
+  name: string;
+  type: "point" | "spot" | "directional";
+  position: Vec3;
+  rotation?: Euler3;
+  color: string;
+  intensity: number;
+  range?: number;
+  angle?: number;
+  castShadow: boolean;
+  visibility: SceneVisibility;
+  floorId?: string;
+}
+
+GM deve:
+- criar;
+- selecionar;
+- mover;
+- alterar cor;
+- intensidade;
+- alcance;
+- ligar/desligar;
+- definir shadow.
+
+======================================================================
+40. BUDGET DE SOMBRAS
+======================================================================
+
+Sombras são caras.
+
+Não permitir dezenas de PointLights com shadow por padrão.
+
+Qualidade média:
+- 1 directional shadow;
+- até 2-4 luzes locais com sombra;
+- demais luzes sem shadow.
+
+Quality presets:
+
+LOW:
+- DPR menor;
+- shadows off ou mínimas;
+- pós-processamento off;
+- menos partículas.
+
+MEDIUM:
+- sombras principais;
+- DPR moderado.
+
+HIGH:
+- sombras melhores;
+- efeitos adicionais;
+- maior DPR.
+
+======================================================================
+41. LUZ DO TOKEN
+======================================================================
+
+MapToken já possui lightJson no Prisma.
+
+Aproveitar.
+
+Definir:
+
+interface TokenLightConfig {
+  enabled: boolean;
+  type: "point" | "spot";
+  color: string;
+  intensity: number;
+  rangeFt: number;
+  angleDeg?: number;
+  castShadow?: boolean;
+}
+
+Exemplo:
+lanterna:
+spot.
+
+tocha:
+point.
+
+O client precisa receber lightJson.
+O server precisa normalizar e autorizar updates.
+
+======================================================================
+42. VISÃO DO TOKEN
+======================================================================
+
+MapToken já possui visionJson.
+
+Aproveitar.
+
+interface TokenVisionConfig {
+  enabled: boolean;
+  rangeFt: number;
+  angleDeg: number;
+  eyeHeightFt: number;
+  darkvisionFt?: number;
+}
+
+Não implementar darkvision visual avançada na primeira etapa.
+
+Primeiro:
+- campo de visão;
+- alcance;
+- paredes bloqueando;
+- hidden entities.
+
+======================================================================
+43. FOG OF WAR — FASE 1
+======================================================================
+
+O Fog atual é cell-based:
+- hidden_cells;
+- revealed_cells.
+
+NÃO jogar isso fora.
+
+Primeira implementação 3D:
+- converter cells ocultas em máscara visual;
+- chão oculto aparece escuro;
+- objetos/tokens de célula oculta não devem ser mostrados ao player;
+- GM vê overlay/transparência diferente.
+
+Problema:
+um simples quadrado preto no chão pode ser "espiado" pela lateral.
+
+Solução inicial:
+usar volumes/colunas de fog ou ocultar geometria dentro das áreas não visíveis.
+
+Regra:
+Fog não deve ser apenas efeito cosmético se existe informação secreta.
+
+======================================================================
+44. FILTRAGEM DE DADOS SECRETOS
+======================================================================
+
+EXTREMAMENTE IMPORTANTE.
+
+Não basta não renderizar um monstro escondido.
+
+Se o server enviar o monstro escondido para o navegador, o jogador pode encontrar
+o dado no DevTools.
+
+Hoje getRoomStateForPlayer filtra:
+- map settings parcialmente;
+- annotations GM.
+
+Expandir a filtragem para 3D.
+
+Para player:
+NÃO enviar:
+- SceneObject visibility=gm;
+- SceneEvent secreto com conteúdo não revelado;
+- tokens isHidden quando apropriado;
+- pistas secretas;
+- objetos secretos;
+- camera bookmarks secretos se necessário.
+
+Implementar no server/shared:
+filterScene3DForPlayers()
+filterTokensForPlayer()
+
+Não confiar somente em CSS/visible=false.
+
+======================================================================
+45. VISIBILIDADE DINÂMICA — FASE 2
+======================================================================
+
+Depois do Fog manual funcionar:
+
+Criar visão baseada em:
+- token;
+- walls;
+- doors;
+- range;
+- angle.
+
+Para uma VTT, não é necessário começar com raytracing de iluminação.
+
+Melhor:
+calcular visibilidade 2D no plano X/Z usando segmentos de parede.
+
+Parede:
+blocksVision.
+
+Porta:
+blocksVision somente quando fechada.
+
+O cliente pode calcular polígonos/raios para visual.
+O servidor deve decidir quais entidades secretas podem ser entregues quando isso
+for necessário para segurança.
+
+Não usar shadow map como lógica de autorização.
+
+======================================================================
+46. PORTAS
+======================================================================
+
+Porta precisa virar entidade interativa real.
+
+Estados:
+- closed;
+- open;
+- locked;
+- destroyed;
+- blocked.
+
+interface DoorState3D {
+  state: "closed" | "open" | "locked" | "destroyed" | "blocked";
+  hinge: "left" | "right";
+  openAngleDeg: number;
+  lockedLabel?: string;
+}
+
+Visual:
+- Closed = 0°;
+- Open = animação até 90° ou openAngleDeg.
+
+Servidor:
+estado autoritativo.
+
+Socket:
+
+scene3d:door:set
+
+Payload:
+{
+  roomCode,
+  authToken,
+  objectId,
+  state
+}
+
+Autorização:
+- GM sempre;
+- player somente se interaction.allowPlayers = true;
+- verificar campanha/sala;
+- validar objeto.
+
+Ao fechar:
+- blocksMovement true;
+- blocksVision true;
+- blocksLight true.
+
+Ao abrir:
+- os bloqueios são removidos.
+
+======================================================================
+47. COLISÃO
+======================================================================
+
+NÃO transformar a VTT em um simulador de física.
+
+Para movimento de token, a autoridade deve ser determinística e simples.
+
+Fontes de colisão:
+- paredes;
+- portas fechadas;
+- objetos marcados blocksMovement;
+- limites do mapa.
+
+Client:
+- preview de colisão;
+- raycast;
+- feedback visual.
+
+Server:
+- valida posição/caminho quando necessário.
+
+Rapier:
+pode ser usado futuramente para:
+- colisão local;
+- câmera;
+- props físicos;
+- efeitos.
+
+Mas NÃO usar o estado do Rapier no navegador como verdade multiplayer.
+
+======================================================================
+48. THREE-MESH-BVH
+======================================================================
+
+Adicionar quando mapas/modelos complexos começarem a tornar raycast caro.
+
+Usos:
+- picking de mesh;
+- raycast;
+- consultas espaciais;
+- colisões client-side;
+- line of sight contra geometria estática.
+
+Não precisa ser ativado no primeiro cubo do projeto.
+
+Usar para meshes estáticas e complexas.
+
+======================================================================
+49. MÚLTIPLOS ANDARES
+======================================================================
+
+Criar:
+
+interface SceneFloor3D {
+  id: string;
+  name: string;
+  elevation: number;
+  height: number;
+  order: number;
+  visible: boolean;
+}
+
+Exemplo:
+- Subsolo -3
+- Térreo 0
+- 1º andar 3
+- 2º andar 6
+- Telhado 9
+
+Objetos/walls/lights podem possuir floorId.
+
+GM:
+- ver todos;
+- isolar andar;
+- esconder andares.
+
+Player:
+estratégia padrão:
+- mostrar andar atual;
+- esconder automaticamente os pisos superiores que bloqueiam interior;
+- permitir configuração.
+
+======================================================================
+50. AUTO-HIDE DE ANDARES
+======================================================================
+
+Necessário para interiores.
+
+Se a câmera olha para um personagem no térreo,
+o teto e o primeiro andar não podem esconder tudo.
+
+Implementar modo:
+autoHideFloorsAboveTarget = true.
+
+Determinar currentFloor:
+- floor do token controlado;
+- floor selecionado;
+- target da câmera.
+
+Esconder floors.order > currentFloor.order.
+
+GM pode desativar.
+
+Fase futura:
+clipping planes/roof fading.
+
+======================================================================
+51. ESCADAS
+======================================================================
+
+Não implementar pathfinding complexo inicialmente.
+
+Escada pode possuir:
+- sourceFloorId;
+- targetFloorId;
+- entry volume;
+- exit point.
+
+Modo simples:
+ao mover token sobre a escada:
+- permitir elevar gradualmente;
+ou
+- usar interação "subir/descer".
+
+Fase inicial aceitável:
+teleport controlado entre pontos.
+
+======================================================================
+52. EDITOR 3D
+======================================================================
+
+O GM precisa conseguir construir a cena.
+
+Criar modo editor 3D com ferramentas:
+
+- Select
+- Move
+- Rotate
+- Scale
+- Place
+- Light
+- Wall
+- Door
+- Delete
+- Duplicate
+- Measure
+
+Painéis:
+- Biblioteca
+- Inspector
+- Hierarquia
+- Andares
+- Ambiente
+- Luzes
+- Câmeras
+- Eventos
+
+Não precisa fazer tudo no primeiro milestone.
+
+======================================================================
+53. HIERARQUIA DA CENA
+======================================================================
+
+Painel em árvore:
+
+Scene
+  Floor: Térreo
+    Walls
+    Doors
+    Props
+    Lights
+  Floor: Primeiro Andar
+  Cameras
+  Audio
+  Events
+
+Cada item:
+- selecionar;
+- esconder;
+- bloquear;
+- renomear.
+
+Bloquear = impedir edição acidental.
+
+======================================================================
+54. UNDO / REDO
+======================================================================
+
+No editor 3D, implementar uma pilha de comandos local.
+
+Comandos:
+- create;
+- delete;
+- transform;
+- property update.
+
+Limite:
+50 ou 100 operações.
+
+Ctrl+Z
+Ctrl+Shift+Z
+
+Não usar undo para ações multiplayer de jogadores.
+É ferramenta de edição do GM.
+
+======================================================================
+55. PERSISTÊNCIA DO EDITOR
+======================================================================
+
+Não enviar MapSettings inteiro a cada frame de TransformControls.
+
+Criar eventos granulares.
+
+Sugestões:
+
+scene3d:object:upsert
+scene3d:object:remove
+scene3d:light:upsert
+scene3d:light:remove
+scene3d:floor:upsert
+scene3d:floor:remove
+scene3d:environment:update
+scene3d:camera:bookmark:upsert
+scene3d:camera:bookmark:remove
+
+Todos:
+- GM only;
+- normalizados no server;
+- persistidos em layerConfigJson;
+- emitidos para sala;
+- filtrados por visibilidade.
+
+Durante drag:
+- atualizar local;
+- opcional broadcast throttled 10-20 Hz;
+- persistir no final.
+
+======================================================================
+56. SOCKET.IO — NÃO CRIAR UM SEGUNDO MULTIPLAYER
+======================================================================
+
+Usar o Socket.IO já existente.
+
+Arquivo principal:
+apps/server/src/live/liveSocketHandlers.ts
+
+RoomState já possui:
+- tokens;
+- mapSettings;
+- turnState;
+- audioState;
+- annotations;
+- activeEffects.
+
+Scene3D pode viver inicialmente em:
+room.mapSettings.layerConfig.scene3d.
+
+Não criar outra sala ou outro websocket.
+
+======================================================================
+57. SERVER AUTORITATIVO
+======================================================================
+
+Para qualquer evento 3D:
+
+1. localizar room;
+2. autenticar;
+3. validar role;
+4. validar payload;
+5. normalizar;
+6. aplicar ao estado;
+7. persistir;
+8. emitir visão apropriada a cada usuário.
+
+Nunca:
+
+socket.on("scene:update", payload => {
+  room.scene = payload;
+})
+
+sem validação.
+
+======================================================================
+58. NORMALIZADORES
+======================================================================
+
+Criar shared/rules/scene3dRules.ts.
+
+Funções:
+- normalizeVec3;
+- normalizeEuler3;
+- normalizeTransform3D;
+- normalizeSceneObject3D;
+- normalizeSceneLight3D;
+- normalizeSceneFloor3D;
+- normalizeSceneEnvironment3D;
+- normalizeCameraBookmark3D;
+- normalizeScene3DConfig.
+
+Clamps:
+posição:
+valores razoáveis baseados no mapa.
+
+scale:
+0.01 a 100, por exemplo.
+
+intensity:
+0 a limite seguro.
+
+nome:
+trim + tamanho máximo.
+
+arrays:
+limites de segurança.
+
+Não aceitar NaN/Infinity.
+
+======================================================================
+59. OBJETOS INTERATIVOS
+======================================================================
+
+Depois de portas:
+
+interface SceneInteractionConfig {
+  type:
+    | "door"
+    | "toggle"
+    | "container"
+    | "terminal"
+    | "teleport"
+    | "event";
+
+  allowPlayers: boolean;
+  rangeFt?: number;
+  eventId?: string;
+}
+
+Pointer/click:
+- destacar objeto;
+- mostrar ação contextual;
+- solicitar interação ao servidor.
+
+Server valida:
+- usuário;
+- token controlado;
+- distância;
+- permissão;
+- estado.
+
+======================================================================
+60. EVENTOS CINEMATOGRÁFICOS
+======================================================================
+
+Requisito do projeto:
+GM pode preparar evento como:
+
+"CRIATURA APARECE"
+
+1. luzes apagam;
+2. porta tranca;
+3. som toca;
+4. criatura aparece;
+5. luz vermelha liga;
+6. câmera muda.
+
+Estrutura:
+
+interface SceneEvent3D {
+  id: string;
+  name: string;
+  steps: SceneEventStep[];
+}
+
+Tipos de step:
+- set_light;
+- set_door;
+- set_object_visibility;
+- set_token_visibility;
+- play_audio;
+- spawn_token;
+- move_token;
+- camera;
+- weather;
+- particle;
+- wait;
+- chat_message;
+
+Cada step precisa de payload tipado.
+
+GM dispara:
+
+scene3d:event:trigger
+
+Server:
+- valida GM;
+- registra eventRunId;
+- aplica estados persistentes;
+- emite evento com startedAt;
+- clients reproduzem animações.
+
+Não confiar no client para decidir estados permanentes.
+
+======================================================================
+61. TRANSIÇÕES DE CENA
+======================================================================
+
+Troca de mapa já existe.
+
+Adicionar camada visual no client:
+
+SceneTransitionOverlay.
+
+Tipos:
+- fade;
+- black;
+- glitch;
+- paranormal;
+- blur;
+- crossfade futuro.
+
+Ao receber troca de mapa:
+1. inicia fade out;
+2. carrega assets;
+3. troca scene;
+4. posiciona câmera;
+5. fade in.
+
+Não atrasar a mudança autoritativa do server por causa da animação.
+
+======================================================================
+62. ÁREAS DE EFEITO 3D
+======================================================================
+
+Reaproveitar targeting existente.
+
+Renderizações:
+
+self_emanation:
+- disco/cilindro ao redor caster.
+
+single_target:
+- linha/retículo.
+
+ranged_projectile:
+- trajetória/linha.
+
+point_sphere:
+- esfera transparente ou círculo projetado no chão.
+
+cone:
+- cone geométrico.
+
+line:
+- box/beam.
+
+cube:
+- box.
+
+cylinder:
+- cilindro.
+
+Material:
+- transparente;
+- depthWrite false quando necessário;
+- cor da ação;
+- outline simples.
+
+Affected tokens:
+usar shared resolveActionTargeting no milestone inicial.
+
+======================================================================
+63. MEDIÇÃO 3D
+======================================================================
+
+Ferramenta Measure.
+
+Clique A -> B.
+
+Mostrar:
+- distância horizontal;
+- elevação;
+- distância 3D opcional.
+
+Como o sistema atual é D&D:
+1 cell = 5 ft.
+
+horizontalFt =
+sqrt(dx² + dz²) * 5
+
+verticalFt =
+abs(dy) * 5
+
+distance3dFt =
+sqrt(dx² + dy² + dz²) * 5
+
+IMPORTANTE:
+Regras de sistemas podem usar formas diferentes de diagonal.
+A ferramenta visual pode mostrar Euclidean, mas combate deve continuar usando
+a regra configurada do sistema.
+
+======================================================================
+64. AUDIO ESPACIAL
+======================================================================
+
+Manter áudio global atual para música.
+
+Adicionar fonte de áudio na cena para:
+- chuva localizada;
+- máquinas;
+- sirene;
+- criatura;
+- TV;
+- rádio;
+- paranormal.
+
+interface SceneSpatialAudioSource {
+  id: string;
+  name: string;
+  assetUrl: string;
+  position: Vec3;
+  volume: number;
+  loop: boolean;
+  refDistance: number;
+  maxDistance: number;
+  visibility: SceneVisibility;
+  autoplay?: boolean;
+}
+
+Usar PositionalAudio / Web Audio.
+
+Atenção:
+browser exige interação do usuário para iniciar áudio em vários casos.
+
+Não substituir GlobalAudioPlayer.
+
+======================================================================
+65. CLIMA E VFX
+======================================================================
+
+Fase posterior.
+
+Weather:
+- rain;
+- snow;
+- fog;
+- ash;
+- dust.
+
+Effects:
+- fire;
+- smoke;
+- sparks;
+- energy;
+- blood;
+- paranormal.
+
+Preferir:
+- instancing;
+- GPU particles quando necessário;
+- limitar quantidade;
+- quality presets.
+
+Não implementar dezenas de partículas antes de otimizar a base.
+
+======================================================================
+66. ANIMAÇÕES DE MODELOS
+======================================================================
+
+GLTF pode carregar AnimationClips.
+
+Criar AnimationMixer por model/token somente quando necessário.
+
+Estados:
+- idle;
+- walk;
+- run;
+- attack;
+- hit;
+- death.
+
+Mapear clips por nome configurável.
+
+Não assumir nomes rígidos em qualquer GLB.
+
+Character/model config pode guardar:
+
+animations: {
+  idle?: string;
+  walk?: string;
+  run?: string;
+  attack?: string;
+  hit?: string;
+  death?: string;
+}
+
+======================================================================
+67. AÇÃO -> EFEITO VISUAL
+======================================================================
+
+Já existe:
+action:used
+
+Aproveitar.
+
+Criar registry:
+ActionEffectRenderer.
+
+Com base em action.visual:
+- cor;
+- shape;
+- duração;
+- projectile;
+- impact.
+
+No 3D:
+action:used pode criar efeito transitório.
+
+Não salvar VFX transitório no banco.
+
+Persistent effects continuam usando activeEffects.
+
+======================================================================
+68. PERFORMANCE — REGRAS OBRIGATÓRIAS
+======================================================================
+
+1. Não guardar posição da câmera em Zustand a cada frame.
+Use refs/useFrame.
+
+2. Não setState React a cada frame para animação.
+
+3. Instancing para objetos repetidos.
+
+4. Lazy-load do renderer.
+
+5. Frustum culling.
+
+6. LOD para modelos pesados.
+
+7. Limitar DPR.
+
+Sugestão:
+dpr={[1, 1.75]}
+
+8. Quality presets.
+
+9. Sombras limitadas.
+
+10. Carregar GLB otimizado.
+
+11. Comprimir texturas.
+
+12. Dispose ao trocar cenas.
+
+13. Não reconstruir materiais em todo render.
+
+14. Memoizar configurações.
+
+15. Não criar centenas de <Html> overlays.
+Mostrar detalhes somente:
+- seleção;
+- hover;
+- tokens importantes.
+
+======================================================================
+69. LOD
+======================================================================
+
+Para modelos complexos:
+- LOD0 perto;
+- LOD1 médio;
+- LOD2 longe.
+
+Não é obrigatório que todo asset tenha LOD no primeiro lançamento.
+
+Mas SceneObject pode futuramente aceitar:
+lodAssets.
+
+======================================================================
+70. INSTANCEDMESH
+======================================================================
+
+Usar para:
+- paredes repetidas;
+- tiles;
+- árvores repetidas;
+- caixas;
+- pedras;
+- decoração;
+- partículas.
+
+Isso reduz draw calls significativamente.
+
+Manter mapa:
+instanceId -> entityId
+para picking quando necessário.
+
+======================================================================
+71. TEXTURAS
+======================================================================
+
+Evitar:
+- dezenas de texturas 4K;
+- PNG enorme para tudo.
+
+Usar:
+- WebP para imagens normais;
+- KTX2/Basis para assets 3D otimizados;
+- 1K/2K onde possível;
+- mipmaps.
+
+Skybox HDR somente em qualidade adequada.
+
+======================================================================
+72. LOADING
+======================================================================
+
+Scene3DLoadingOverlay deve mostrar:
+- carregando cena;
+- progresso aproximado;
+- asset atual opcional;
+- botão voltar ao 2D em caso de erro.
+
+Se um GLB falhar:
+- não derrubar toda a mesa;
+- renderizar placeholder;
+- registrar erro;
+- continuar sessão.
+
+======================================================================
+73. ERROR BOUNDARY 3D
+======================================================================
+
+Criar boundary para o renderer.
+
+Se WebGL falhar:
+- mostrar mensagem;
+- permitir retornar ao 2D;
+- não desconectar da campanha.
+
+Modo 3D não pode tornar a VTT inutilizável.
+
+======================================================================
+74. MAPA 3D HÍBRIDO
+======================================================================
+
+Todo mapa antigo deve poder abrir no modo 3D.
+
+Fallback automático:
+
+backgroundImage -> chão
+terrainCells -> tiles
+walls -> paredes
+objects -> primitives
+tokens -> billboards
+fog -> máscara
+images -> planes/decal simples
+
+Isso dá valor imediatamente sem exigir reconstrução do mapa.
+
+Depois o GM enriquece com GLBs.
+
+======================================================================
+75. MAPAS NATIVAMENTE 3D
+======================================================================
+
+Depois:
+permitir mapa sem background 2D.
+
+Cena pode ser montada apenas com:
+- terrain;
+- objects;
+- walls;
+- GLBs;
+- lights;
+- floors.
+
+Mesmo assim manter:
+widthCells;
+heightCells;
+grid.
+
+A VTT precisa continuar tendo um espaço lógico de combate.
+
+======================================================================
+76. SALVAMENTO
+======================================================================
+
+O requisito é:
+fechar sessão e continuar depois.
+
+Persistir:
+- objetos;
+- transforms;
+- portas;
+- iluminação;
+- floors;
+- Fog;
+- camera bookmarks;
+- scene settings;
+- tokens;
+- hidden state;
+- active map.
+
+Estados puramente transitórios:
+- posição livre da câmera de cada usuário;
+- partículas;
+- hover;
+- selection;
+- animação em andamento.
+
+Não precisam persistir.
+
+======================================================================
+77. ROOMSTATE E RESTART DO SERVER
+======================================================================
+
+O projeto atual mantém partes da sessão em memória:
+- turnState;
+- audioState;
+- annotations;
+- activeEffects;
+- chat.
+
+A implementação 3D NÃO deve aumentar essa fragilidade para estado permanente.
+
+Scene config deve estar em PostgreSQL/layerConfigJson.
+
+Porta aberta/fechada, por exemplo, precisa sobreviver a restart se for tratada
+como estado do mapa.
+
+Eventos transitórios podem ficar em memória.
+
+======================================================================
+78. PRISMA — O QUE REAPROVEITAR
+======================================================================
+
+Map:
+já possui:
+- width;
+- height;
+- cellSize;
+- background;
+- grid fields;
+- fog fields;
+- layerConfigJson.
+
+MapToken:
+já possui:
+- rotation;
+- scale;
+- visibility;
+- hidden;
+- elevation;
+- standMode;
+- visionJson;
+- lightJson.
+
+Portanto a primeira versão 3D NÃO exige uma grande migration de tokens.
+
+Precisará principalmente:
+- expor campos já existentes;
+- expandir layerConfigJson;
+- opcional Asset model depois.
+
+======================================================================
+79. ROTAÇÃO DO TOKEN
+======================================================================
+
+MapToken.rotation já existe no Prisma, mas não está presente no shared Token.
+
+Adicionar:
+rotation?: number
+
+Convenção:
+graus ou radianos?
+
+RECOMENDAÇÃO API:
+guardar graus no domínio/JSON porque UI é amigável.
+
+No renderer:
+THREE.MathUtils.degToRad(rotation).
+
+Documentar e usar sempre a mesma convenção.
+
+======================================================================
+80. TOKEN MODEL URL
+======================================================================
+
+Opções:
+
+A) colocar no CharacterSheet dataJson.
+B) adicionar campo no Character.
+C) colocar modelUrl em MapToken.
+
+Recomendação:
+- Character possui defaultTokenModelUrl;
+- MapToken pode possuir override no visual JSON ou campo próprio futuro.
+
+Para evitar migration inicial:
+pode começar em CharacterSheet:
+dataJson.token3d.modelUrl.
+
+Depois promover para coluna dedicada se ficar estável.
+
+======================================================================
+81. PERMISSÕES DO GM
+======================================================================
+
+Somente owner/gm pode:
+- criar objeto;
+- deletar objeto;
+- mover cenário;
+- editar luz;
+- editar floor;
+- editar fog;
+- criar eventos;
+- camera broadcast;
+- ocultar/revelar entidades;
+- alterar environment;
+- alterar clima;
+- alterar scene settings.
+
+Player:
+- mover tokens autorizados;
+- interagir com objetos permitidos;
+- usar ações;
+- medir;
+- controlar câmera local.
+
+Server revalida tudo.
+
+======================================================================
+82. OBJETOS ESCONDIDOS
+======================================================================
+
+SceneVisibility:
+- public;
+- gm;
+- hidden.
+
+"gm":
+somente GM recebe.
+
+"hidden":
+pode representar objeto preparado ainda não revelado.
+
+Quando revelar:
+server muda para public e emite.
+
+Não guardar pista secreta em um objeto public com opacity=0.
+
+======================================================================
+83. DISPOSITION
+======================================================================
+
+MapToken já tem:
+- friendly;
+- neutral;
+- hostile.
+
+Pode ser utilizado no 3D:
+- cor do selection ring;
+- GM overlay;
+- targeting.
+
+Não obrigar player a ver disposition de inimigos se regra de campanha não permitir.
+
+======================================================================
+84. HEALTH BAR E CONDITIONS
+======================================================================
+
+No 3D:
+healthbar precisa ficar sobre o personagem.
+
+Primeira implementação:
+usar Drei Html para token selecionado/hover.
+
+Para muitos tokens:
+usar sprite/plane simples em vez de dezenas de DOM nodes.
+
+Condições:
+ícones ao redor da base ou poucos sprites.
+
+Não transformar cada token em uma árvore HTML pesada.
+
+======================================================================
+85. CONTEXT MENU
+======================================================================
+
+TokenContextMenu atual é HTML.
+
+Reutilizar.
+
+No pointer right click do token 3D:
+- selecionar;
+- capturar clientX/clientY;
+- abrir o mesmo menu HTML.
+
+Não reconstruir o menu dentro do Canvas.
+
+======================================================================
+86. UI HTML SOBRE CANVAS
+======================================================================
+
+Manter:
+- sidebar;
+- hotbar;
+- chat;
+- turn tracker;
+- audio;
+- character modal;
+- panels.
+
+Canvas 3D deve ocupar apenas a camada de mapa.
+
+Toda UI do jogo continua React DOM acima.
+
+Isso é uma das maiores vantagens do R3F neste projeto.
+
+======================================================================
+87. ANOTAÇÕES
+======================================================================
+
+Fase 1:
+anotações atuais podem ser projetadas no chão como textura/linhas ou
+temporariamente não estar disponíveis no 3D com aviso.
+
+Fase 2:
+renderizar:
+- pen strokes como Line;
+- text como Sprite/Text;
+- respeitar visibility.
+
+Não duplicar dados.
+
+Usar MapAnnotation atual.
+
+======================================================================
+88. FOG EDITOR 3D
+======================================================================
+
+GM precisa continuar podendo:
+- revelar;
+- esconder;
+- pincel.
+
+No 3D:
+raycast contra ground;
+converter worldX/worldZ para cellX/cellY;
+alterar FogOfWarConfig atual.
+
+Assim o mesmo fog funciona 2D e 3D.
+
+======================================================================
+89. TOOL DOCK
+======================================================================
+
+No modo 3D:
+ToolDock atual pode ganhar:
+- Select;
+- Measure;
+- Scene Editor (GM);
+- Fog;
+- Lights (GM);
+- Camera.
+
+Não criar uma UI completamente separada.
+
+======================================================================
+90. QUALIDADE
+======================================================================
+
+Adicionar setting local:
+
+scene3dQuality:
+- low
+- medium
+- high
+- auto
+
+AUTO:
+usar heurística simples:
+- devicePixelRatio;
+- GPU detection opcional;
+- FPS monitor futuro.
+
+Primeiro não depender de detecção complexa.
+
+======================================================================
+91. WEBGPU FUTURO
+======================================================================
+
+Criar abstração suficiente para não amarrar materiais customizados cedo demais.
+
+Não escrever dezenas de ShaderMaterial customizados no primeiro release.
+
+Quando WebGPU estiver estável para o projeto:
+- testar Renderer async;
+- verificar materiais;
+- verificar pós-processamento;
+- feature flag;
+- benchmark.
+
+Nunca remover WebGL sem motivo.
+
+======================================================================
+92. TESTES UNITÁRIOS IMPORTANTES
+======================================================================
+
+Adicionar testes para:
+
+coordinates3d:
+- legacy -> 3D;
+- 3D -> legacy;
+- token 1x1;
+- token 2x2;
+- elevation.
+
+normalizer:
+- V1 -> V2;
+- scene3d inválido;
+- NaN;
+- scale;
+- visibility.
+
+filter:
+- GM recebe objeto GM;
+- player não recebe;
+- hidden token não vaza.
+
+door:
+- aberta não bloqueia;
+- fechada bloqueia.
+
+movement:
+- conversão e clamp.
+
+targeting bridge:
+- world point -> pixel point;
+- resultado igual ao 2D.
+
+======================================================================
+93. TESTES DE INTEGRAÇÃO
+======================================================================
+
+Casos mínimos:
+
+1. usuário entra em campanha.
+2. abre mapa 2D.
+3. muda para 3D.
+4. mapa aparece.
+5. tokens aparecem nos mesmos lugares.
+6. move token.
+7. outro navegador recebe movimento.
+8. volta ao 2D.
+9. token está na posição correta.
+10. recarrega.
+11. posição continua.
+12. GM cria objeto.
+13. outro usuário recebe.
+14. objeto GM-only não chega ao player.
+15. GM abre porta.
+16. todos veem animação.
+17. troca de mapa.
+18. scene3d troca corretamente.
+19. ação de cone mostra área.
+20. affectedTokenIds são iguais ao modo 2D.
+
+======================================================================
+94. PERFORMANCE TARGET
+======================================================================
+
+Meta inicial desktop:
+60 FPS em cena moderada.
+
+Graceful fallback:
+30 FPS em hardware fraco sem travar UI.
+
+Cenário de teste:
+- mapa 50x50;
+- 100 tokens;
+- 500-1000 props simples;
+- 100+ paredes;
+- 5 luzes;
+- fog;
+- grid.
+
+Não exigir 60 FPS com 100 modelos 4K não otimizados.
+
+======================================================================
+95. PHASE 0 — PREPARAÇÃO
+======================================================================
+
+Objetivo:
+introduzir dependências e estrutura sem quebrar nada.
+
+Tarefas:
+
+[ ] Criar branch.
+[ ] Rodar typecheck/build baseline.
+[ ] Adicionar R3F 8.
+[ ] Adicionar Drei 9.
+[ ] Adicionar Three.
+[ ] Adicionar @types/three.
+[ ] Criar feature scene3d.
+[ ] Expandir CameraMode para "3d".
+[ ] Criar botão 3D.
+[ ] Lazy load.
+[ ] Canvas vazio com fundo e câmera.
+[ ] Voltar 2D funciona.
+
+CRITÉRIO DE PRONTO:
+usuário alterna 2D/2.5D/3D sem crash.
+
+======================================================================
+96. PHASE 1 — MAPA E TOKENS
+======================================================================
+
+[ ] GroundPlane.
+[ ] Background texture.
+[ ] Grid.
+[ ] CameraControls.
+[ ] Center/focus map.
+[ ] tokens -> world position.
+[ ] billboard/standee.
+[ ] selection ring.
+[ ] raycast.
+[ ] drag.
+[ ] socket token:move.
+[ ] elevation.
+[ ] context menu.
+[ ] health overlay básico.
+[ ] action target pointer bridge.
+
+CRITÉRIO:
+uma sessão real consegue jogar em 3D usando o mesmo mapa e tokens existentes.
+
+======================================================================
+97. PHASE 2 — LEGACY MAP -> 3D
+======================================================================
+
+[ ] terrainCells renderizados.
+[ ] walls renderizadas.
+[ ] MapObjects renderizados.
+[ ] MapImages como plane/decal.
+[ ] instancing.
+[ ] Fog atual em 3D.
+[ ] annotations básicas.
+
+CRITÉRIO:
+mapas construídos no editor antigo ficam visualmente úteis no 3D.
+
+======================================================================
+98. PHASE 3 — SCENE DATA + EDITOR
+======================================================================
+
+[ ] MapLayerConfig V2.
+[ ] Scene3DConfig.
+[ ] normalizers.
+[ ] scene object CRUD.
+[ ] TransformControls.
+[ ] inspector.
+[ ] library.
+[ ] GLB upload.
+[ ] useGLTF.
+[ ] duplicate/delete.
+[ ] snap.
+[ ] persistence.
+[ ] socket granular.
+[ ] permissions.
+
+CRITÉRIO:
+GM consegue montar uma sala 3D dentro do próprio RPG Platform.
+
+======================================================================
+99. PHASE 4 — LIGHTS, FLOORS, DOORS
+======================================================================
+
+[ ] Environment.
+[ ] point/spot/directional.
+[ ] shadows.
+[ ] light editor.
+[ ] floors.
+[ ] auto-hide upper floors.
+[ ] doors.
+[ ] door states.
+[ ] multiplayer.
+[ ] blocksMovement.
+[ ] blocksVision.
+[ ] camera bookmarks.
+
+CRITÉRIO:
+casa/prédio com andares e portas funciona durante sessão.
+
+======================================================================
+100. PHASE 5 — VISÃO E FOG AVANÇADO
+======================================================================
+
+[ ] visionJson.
+[ ] lightJson.
+[ ] Token vision.
+[ ] walls block vision.
+[ ] doors alteram visão.
+[ ] visibility mask.
+[ ] hidden tokens.
+[ ] server filter.
+[ ] GM preview da visão do jogador.
+[ ] dark areas.
+
+CRITÉRIO:
+jogador não vê sala/criatura que não deveria ver.
+
+======================================================================
+101. PHASE 6 — AÇÕES E COMBATE 3D
+======================================================================
+
+[ ] AoE meshes.
+[ ] attack path.
+[ ] projectile preview.
+[ ] sphere.
+[ ] cone.
+[ ] line.
+[ ] cube.
+[ ] cylinder.
+[ ] measure.
+[ ] action:used effects.
+[ ] persistent effects.
+[ ] summon em 3D.
+[ ] rotation/facing.
+
+CRITÉRIO:
+combate usa 3D sem alterar resultados das regras já existentes.
+
+======================================================================
+102. PHASE 7 — CINEMATIC
+======================================================================
+
+[ ] event system.
+[ ] camera broadcast.
+[ ] transitions.
+[ ] spatial audio.
+[ ] weather.
+[ ] particles.
+[ ] animations.
+[ ] door animation polish.
+[ ] scene presets.
+
+CRITÉRIO:
+GM consegue preparar sequências narrativas.
+
+======================================================================
+103. PHASE 8 — OTIMIZAÇÃO
+======================================================================
+
+[ ] InstancedMesh audit.
+[ ] LOD.
+[ ] DRACO/Meshopt.
+[ ] KTX2.
+[ ] quality presets.
+[ ] lazy chunks.
+[ ] disposal.
+[ ] memory leak audit.
+[ ] raycast BVH.
+[ ] FPS instrumentation.
+[ ] network throttling.
+[ ] load tests.
+
+======================================================================
+104. O QUE NÃO FAZER
+======================================================================
+
+NÃO:
+- apagar MapCanvas 2D;
+- substituir Socket.IO;
+- criar backend separado só para 3D;
+- migrar para Unity;
+- trocar PostgreSQL por outro banco;
+- remover Zustand;
+- mudar React 18 para React 19 apenas por causa do 3D;
+- instalar R3F 9 sem migrar React;
+- colocar toda cena num único componente de 3000 linhas;
+- salvar câmera a cada frame;
+- mandar Scene3DConfig inteiro a cada pointer move;
+- confiar no client para permissão;
+- mandar segredos ao player e só ocultar visualmente;
+- aceitar qualquer arquivo como GLB;
+- habilitar dezenas de shadow lights;
+- usar física como autoridade multiplayer;
+- reescrever targeting antes do renderer funcionar;
+- tentar implementar tudo em uma única entrega.
+
+======================================================================
+105. ARQUIVOS DO PROJETO QUE O ASTRA DEVE ESTUDAR
+======================================================================
+
+ANTES DE COMEÇAR:
+
+CLIENT
+
+apps/client/src/features/map/MapCanvas.tsx
+apps/client/src/features/map/hooks/useCamera.ts
+apps/client/src/features/map/hooks/useMapInput.ts
+apps/client/src/features/map/hooks/useTokenDrag.ts
+apps/client/src/features/map/utils/coords.ts
+apps/client/src/features/map/store/mapStore.ts
+apps/client/src/features/map/store/campaignMapStore.ts
+apps/client/src/features/map/components/MapTerrainLayer.tsx
+apps/client/src/features/map/components/Grid.tsx
+apps/client/src/features/map/components/FogLayer.tsx
+apps/client/src/features/map/components/MapEditorModal.tsx
+
+apps/client/src/features/tokens/components/Token.tsx
+apps/client/src/features/tokens/components/TokenLayer.tsx
+apps/client/src/features/tokens/components/TokenContextMenu.tsx
+apps/client/src/features/tokens/store/tokenStore.ts
+apps/client/src/features/tokens/services/tokenSocketService.ts
+
+apps/client/src/features/actions/components/ActionPreviewLayer.tsx
+apps/client/src/features/actions/store/actionTargetingStore.ts
+apps/client/src/features/actions/utils/targetingGeometry.ts
+
+apps/client/src/features/ui/store/uiStore.ts
+apps/client/src/features/game/components/GameSettingsPanel.tsx
+
+apps/client/src/features/assets/assetApi.ts
+
+SHARED
+
+shared/types/map.ts
+shared/types/token.ts
+shared/types/multiplayer.ts
+shared/types/action.ts
+shared/rules/mapRules.ts
+shared/rules/tokenRules.ts
+shared/rules/targetingRules.ts
+
+SERVER
+
+apps/server/prisma/schema.prisma
+apps/server/src/maps/mapService.ts
+apps/server/src/live/liveRoomService.ts
+apps/server/src/live/liveSocketHandlers.ts
+apps/server/src/assets/assetRoutes.ts
+apps/server/src/assets/assetService.ts
+apps/server/src/campaigns/campaignAccess.ts
+
+======================================================================
+106. ALTERAÇÕES INICIAIS MAIS IMPORTANTES
+======================================================================
+
+Ordem exata recomendada:
+
+1. typecheck/build baseline.
+2. dependências 3D compatíveis com React 18.
+3. CameraMode "3d".
+4. Scene3DCanvas vazio.
+5. switching sem crash.
+6. coordinates3d.
+7. GroundPlane.
+8. background texture.
+9. Grid3D.
+10. camera.
+11. Token3D.
+12. token drag.
+13. socket.
+14. targeting bridge.
+15. legacy walls/objects.
+16. MapLayerConfig V2.
+17. editor scene3d.
+18. GLB.
+19. lights.
+20. doors/floors.
+21. Fog/vision.
+22. cinematic/performance.
+
+======================================================================
+107. PROPOSTA DE COMPONENTE ROOT
+======================================================================
+
+Conceitualmente:
+
+<Scene3DCanvas>
+  <Canvas>
+    <SceneCamera />
+    <SceneEnvironment />
+    <GroundPlane3D />
+    <Terrain3D />
+    <Walls3D />
+    <Floors3D />
+    <SceneObjectsLayer />
+    <SceneLights3D />
+    <Token3DLayer />
+    <ActionPreview3D />
+    <FogOfWar3D />
+    <SceneEffects3D />
+    <SpatialAudio3D />
+    <SceneEditor3D />
+  </Canvas>
+</Scene3DCanvas>
+
+Elementos DOM como Sidebar/Hotbar não entram aqui.
+
+======================================================================
+108. EXEMPLO DE CONVERSÃO DE TOKEN
+======================================================================
+
+Token:
+x = 80 px
+y = 120 px
+cellSize = 40
+widthCells = 1
+heightCells = 1
+elevation = 10 ft
+
+Centro:
+X pixel = 100
+Y pixel = 140
+
+World:
+X = 100 / 40 = 2.5
+Z = 140 / 40 = 3.5
+Y = 10 / 5 = 2
+
+position:
+[2.5, 2, 3.5]
+
+Ao voltar:
+x = 2.5*40 - 20 = 80
+y = 3.5*40 - 20 = 120
+
+Não perde posição.
+
+======================================================================
+109. EXEMPLO DE TARGETING BRIDGE
+======================================================================
+
+R3F raycast retornou:
+
+worldPoint = {
+  x: 8.25,
+  y: 0,
+  z: 11.5
+}
+
+Converter:
+
+pixelPoint = {
+  x: worldPoint.x * cellSize,
+  y: worldPoint.z * cellSize
+}
+
+Passar para:
+resolveActionTargeting()
+
+O caster origin também é convertido.
+
+Resultado:
+affectedTokenIds.
+
+Renderizar AoE em 3D usando world point.
+
+======================================================================
+110. EXEMPLO DE WALL 3D
+======================================================================
+
+Wall:
+x=4
+y=2
+orientation=horizontal
+height=10 ft
+
+World:
+height = 10 / 5 = 2
+
+mesh:
+width = 1
+height = 2
+depth = 0.08
+
+center:
+x = 4.5
+y = 1
+z = 2
+
+Ajustar exatamente conforme a semântica de borda do editor atual.
+
+======================================================================
+111. SERVER FILTER — EXEMPLO CONCEITUAL
+======================================================================
+
+function filterScene3DForPlayer(scene, context) {
+  return {
+    ...scene,
+    objects: scene.objects.filter(
+      object => object.visibility === "public"
+    ),
+    lights: scene.lights.filter(
+      light => light.visibility === "public"
+    ),
+    events: scene.events.filter(
+      event => event.isPubliclyKnown
+    )
+  };
+}
+
+Não copiar exatamente sem normalização.
+É apenas o comportamento esperado.
+
+======================================================================
+112. EVENTOS SOCKET PROPOSTOS
+======================================================================
+
+GM EDITOR:
+
+scene3d:object:upsert
+scene3d:object:remove
+scene3d:light:upsert
+scene3d:light:remove
+scene3d:floor:upsert
+scene3d:floor:remove
+scene3d:environment:update
+scene3d:camera:bookmark:upsert
+scene3d:camera:bookmark:remove
+
+INTERAÇÕES:
+
+scene3d:door:set
+scene3d:interaction:use
+
+CINEMATIC:
+
+scene3d:event:trigger
+scene3d:camera:broadcast
+scene3d:transition:play
+
+Se existir evento atual equivalente, reutilizar em vez de duplicar.
+
+======================================================================
+113. ACK / ERRO
+======================================================================
+
+Para ações importantes do editor, usar callbacks ack.
+
+Exemplo:
+
+socket.emit("scene3d:object:upsert", payload, ack => {
+  if (!ack.ok) ...
+});
+
+GM precisa saber quando save falhou.
+
+Não atualizar UI como "salvo" sem resposta quando persistência for crítica.
+
+======================================================================
+114. CONCORRÊNCIA
+======================================================================
+
+Inicialmente apenas GM/owner deve editar cenário.
+
+Se dois GMs editarem:
+last-write-wins é aceitável no primeiro release.
+
+Futuro:
+- entity version;
+- updatedAt;
+- conflict resolution.
+
+Não implementar CRDT agora.
+
+======================================================================
+115. MODELOS 3D E CORS
+======================================================================
+
+Preferir assets hospedados pelo próprio server:
+- /assets/hash.glb
+
+URLs externas podem ter:
+- CORS;
+- hotlink;
+- expiração;
+- performance.
+
+Permitir URL externa apenas como opção avançada.
+
+Asset interno é padrão.
+
+======================================================================
+116. SEGURANÇA DE MODELOS
+======================================================================
+
+GLB deve ser tratado como dado, não código.
+
+Não executar:
+- scripts;
+- URLs arbitrárias vindas de userData;
+- HTML embutido;
+- eventos vindos do arquivo.
+
+Ignorar userData perigoso.
+
+Texturas externas em GLTF não devem ser permitidas inicialmente se usar apenas GLB.
+
+======================================================================
+117. OBJETO "CUSTOM" EXISTENTE
+======================================================================
+
+MapObject custom pode ganhar:
+
+assetUrl?: string
+
+Mas cuidado:
+alterar MapObject impacta normalizer.
+
+Alternativa melhor:
+manter MapObject legado intacto e criar SceneObject3D separado.
+
+Recomendação:
+SceneObject3D separado.
+
+Legacy MapObject continua como compatibilidade.
+
+======================================================================
+118. MAP IMAGE NO 3D
+======================================================================
+
+MapImage pode ser:
+- plano horizontal;
+- decal;
+- plano vertical opcional futuro.
+
+Na primeira versão:
+renderizar sobre o chão com y = 0.01 para evitar z-fighting.
+
+Respeitar:
+x;
+y;
+width;
+height;
+image.
+
+Converter pixels -> world units usando cellSize.
+
+======================================================================
+119. Z-FIGHTING
+======================================================================
+
+Evitar superfícies coplanares.
+
+Camadas sugeridas:
+ground y=0
+map image y=0.005
+grid y=0.01
+selection/aoe y=0.02
+fog overlay conforme estratégia
+
+Para tokens planos:
+y apropriado acima da superfície.
+
+Usar polygonOffset quando necessário.
+
+======================================================================
+120. SELEÇÃO
+======================================================================
+
+Raycasting R3F já fornece event.object/intersections.
+
+Objetos devem conter:
+userData.entityId
+userData.entityType
+
+Tipos:
+- token;
+- sceneObject;
+- wall;
+- light;
+- floor.
+
+Editor resolve entityId.
+
+Gameplay prioriza tokens/interações.
+
+======================================================================
+121. FERRAMENTAS E INPUT
+======================================================================
+
+Criar estado:
+
+sceneTool:
+- select
+- move
+- measure
+- fogReveal
+- fogHide
+- place
+- wall
+- light
+
+Não deixar listeners espalhados.
+
+Centralizar decisão em input/controller.
+
+Sempre ignorar eventos originados de UI HTML.
+
+Reutilizar ideia de isEventFromUiLayer.
+
+======================================================================
+122. MOBILE / TOUCH
+======================================================================
+
+Não bloquear o desktop esperando UX mobile perfeita.
+
+Mas:
+- Canvas precisa suportar pointer events;
+- pinch zoom futuro;
+- UI não pode depender somente de hover.
+
+Primeiro foco:
+desktop.
+
+======================================================================
+123. ACESSIBILIDADE / FALLBACK
+======================================================================
+
+Modo 2D permanece alternativa para:
+- hardware sem WebGL;
+- acessibilidade;
+- performance;
+- usuários que preferem VTT clássico.
+
+Isso é uma vantagem do projeto.
+Não obrigar 3D.
+
+======================================================================
+124. FÍSICA — QUANDO USAR
+======================================================================
+
+Use Rapier SOMENTE quando houver requisito concreto:
+- props caindo;
+- dado 3D;
+- câmera colidindo;
+- ragdoll futuro;
+- objetos empurráveis.
+
+Não usar Rapier só para mover tokens em grid.
+
+Movimento VTT deve continuar previsível e server-validável.
+
+======================================================================
+125. DADOS 3D DO DADO
+======================================================================
+
+Futuro opcional:
+dice roller 3D.
+
+Não está no caminho crítico.
+
+Pode usar Rapier para dados físicos.
+Resultado deve continuar podendo ser server-authoritative:
+server decide resultado e visual simula,
+ou algoritmo verificável.
+
+Não deixar resultado competitivo depender só da física client-side.
+
+======================================================================
+126. PÓS-PROCESSAMENTO
+======================================================================
+
+Depois do core:
+
+Possíveis:
+- bloom;
+- vignette;
+- SSAO;
+- depth of field;
+- film grain;
+- glitch;
+- chromatic aberration.
+
+Regras:
+- opcional;
+- quality preset;
+- não comprometer legibilidade de grid/tokens;
+- efeitos de terror só em cinematic.
+
+======================================================================
+127. ESTILO VISUAL
+======================================================================
+
+A VTT precisa preservar leitura de jogo.
+
+Mesmo em 3D:
+- tokens distinguíveis;
+- seleção clara;
+- grid opcional;
+- área de efeito clara;
+- vida legível;
+- condição legível;
+- mouse feedback;
+- objetos interativos destacados.
+
+Não priorizar realismo sobre usabilidade.
+
+======================================================================
+128. EVENTO "CRIATURA APARECE" — META
+======================================================================
+
+Depois das fases cinematográficas, deve ser possível configurar:
+
+Evento:
+"CRIATURA APARECE"
+
+Steps:
+1. set_light: corredor=false
+2. set_door: door_01=locked
+3. play_audio: sting_horror.mp3
+4. set_token_visibility: monster_01=public
+5. set_light: red_emergency=true
+6. camera: bookmark_monster
+7. wait: 1500
+8. chat_message: "Algo emerge da escuridão."
+
+Todos recebem mesma sequência baseada em startedAt.
+
+======================================================================
+129. CENA DE EXEMPLO PARA VALIDAR O 3D
+======================================================================
+
+Criar mapa teste:
+
+"Laboratório 3D"
+
+50x30 cells.
+
+Contém:
+- chão;
+- background opcional;
+- 4 salas;
+- corredor;
+- 20 paredes;
+- 4 portas;
+- 2 andares;
+- 10 props;
+- 4 point lights;
+- 1 luz vermelha;
+- 3 jogadores billboard;
+- 2 criaturas;
+- 1 criatura hidden;
+- fog;
+- câmera Entrada;
+- câmera Laboratório;
+- som de máquina;
+- evento Criatura Aparece.
+
+Essa cena serve como integração.
+
+======================================================================
+130. CRITÉRIO FINAL DE SUCESSO
+======================================================================
+
+O projeto 3D estará realmente "acontecendo" quando:
+
+- mapas atuais ainda funcionam;
+- jogador alterna 2D/3D;
+- tokens mantêm posição entre modos;
+- câmera 3D é natural;
+- GM monta cena sem editar código;
+- GLB é enviado e colocado na cena;
+- paredes têm volume;
+- portas abrem;
+- floors funcionam;
+- luzes alteram ambiente;
+- Fog impede revelar segredo;
+- player não recebe dados secretos;
+- movimento é multiplayer;
+- combate continua correto;
+- AoE aparece em 3D;
+- estado persiste;
+- server restart não apaga cenário;
+- efeitos não travam UI;
+- hardware mais fraco pode usar 2D/low quality.
+
+======================================================================
+131. INSTRUÇÃO DIRETA AO ASTRA
+======================================================================
+
+ASTRA:
+
+Não tente implementar todas as funcionalidades deste documento de uma vez.
+
+Comece pela PHASE 0 e PHASE 1.
+
+Antes de editar:
+1. leia os arquivos listados na seção 105;
+2. rode typecheck/build;
+3. confirme a forma atual de MapCanvas, MapSettings, Token e Socket.IO.
+
+Então:
+
+PASSO 1
+Instale Three + R3F compatível com React 18.
+
+PASSO 2
+Adicione CameraMode "3d" sem quebrar 2D.
+
+PASSO 3
+Crie Scene3DCanvas lazy-loaded.
+
+PASSO 4
+Renderize ground + background + grid.
+
+PASSO 5
+Crie coordinates3d.ts e cubra com testes.
+
+PASSO 6
+Renderize tokens existentes como standees.
+
+PASSO 7
+Implemente seleção e drag usando raycast contra o ground.
+
+PASSO 8
+Reutilize token:move e autorização existente.
+
+PASSO 9
+Conecte targeting existente convertendo world X/Z para pixel X/Y.
+
+PASSO 10
+Somente depois avance para walls/objects.
+
+Não introduza MapLayerConfig V2 sem atualizar normalizeMapLayerConfig primeiro.
+
+Não salve GLB sem modificar a allowlist do assetService.
+
+Não exponha scene objects secretos no RoomState do player.
+
+Não crie uma nova engine de multiplayer.
+
+Não use física como fonte de verdade.
+
+Não remova o renderer legado.
+
+Ao final de cada fase:
+- npm run typecheck
+- npm run build
+- testar 2D
+- testar 3D
+- testar dois navegadores/socket
+- registrar o que foi concluído.
+
+======================================================================
+132. ENTREGÁVEIS ESPERADOS DO ASTRA — PRIMEIRA ENTREGA
+======================================================================
+
+Primeira entrega deve conter SOMENTE uma fundação sólida:
+
+1. Dependências corretas.
+2. Botão 3D.
+3. Scene3DCanvas.
+4. PerspectiveCamera.
+5. CameraControls.
+6. GroundPlane com background.
+7. Grid.
+8. Tokens billboard/standee.
+9. Elevation.
+10. Seleção.
+11. Drag.
+12. Socket token move.
+13. Context menu.
+14. Bridge de targeting.
+15. Fallback para 2D.
+16. Typecheck.
+17. Build.
+
+NÃO precisa nessa primeira entrega:
+- eventos;
+- clima;
+- áudio espacial;
+- WebGPU;
+- física;
+- animações complexas;
+- editor GLB completo;
+- visão dinâmica.
+
+Depois de a fundação ser validada, seguir a Phase 2.
+
+======================================================================
+133. BASE FUNCIONAL QUE DEVE SER ATENDIDA AO LONGO DO ROADMAP
+======================================================================
+
+O roadmap completo deve cobrir as funcionalidades solicitadas para o mapa 3D:
+
+- cenário 3D;
+- câmera livre;
+- câmeras salvas;
+- modelos e tokens;
+- billboarding;
+- movimentação;
+- grid;
+- iluminação;
+- escuridão;
+- visibilidade;
+- Fog of War;
+- paredes;
+- portas;
+- objetos interativos;
+- diferentes andares;
+- combate;
+- alcance;
+- distância;
+- áreas de efeito;
+- criaturas;
+- animações;
+- efeitos visuais;
+- áudio;
+- controle do mestre;
+- objetos escondidos;
+- eventos;
+- cenas;
+- transições;
+- multiplayer;
+- permissões;
+- salvamento;
+- editor de mapas.
+
+Não considerar o trabalho concluído apenas por exibir um modelo 3D.
+A meta é integrar o 3D às regras reais da VTT.
+
+======================================================================
+134. OBSERVAÇÕES DE ARQUITETURA IMPORTANTES
+======================================================================
+
+A maior vantagem do projeto atual é que muita lógica não precisa ser recriada.
+
+REUTILIZAR:
+
+Campaign:
+continua igual.
+
+Character:
+continua igual.
+
+CharacterSheet:
+continua igual.
+
+CharacterAction:
+continua igual.
+
+TurnState:
+continua igual.
+
+Chat:
+continua igual.
+
+Dice:
+continua igual.
+
+Audio global:
+continua igual.
+
+Map:
+evolui.
+
+MapLayerConfig:
+evolui.
+
+MapToken:
+evolui.
+
+Socket room:
+continua igual, ganha eventos.
+
+Assets:
+evolui para modelos.
+
+Em outras palavras:
+
+O 3D NÃO é uma nova aplicação.
+É um novo modo de visualizar e editar o mesmo mundo de campanha.
+
+======================================================================
+135. RECOMENDAÇÃO SOBRE REACT 19
+======================================================================
+
+Não migrar React 18 -> React 19 no mesmo trabalho do 3D.
+
+Motivo:
+isso mistura duas mudanças grandes e dificulta descobrir a origem dos bugs.
+
+Primeira versão:
+React 18
+R3F 8
+Drei 9
+
+Depois que 3D estiver estável:
+criar tarefa separada para atualizar:
+React 19
+R3F 9
+Drei compatível
+Rapier v2 se utilizado.
+
+======================================================================
+136. RECOMENDAÇÃO SOBRE WEBGPU
+======================================================================
+
+Mesma filosofia:
+
+Não misturar:
+"implementar 3D"
+com
+"migrar renderer para WebGPU experimental".
+
+Primeiro:
+3D estável em WebGL.
+
+Depois:
+benchmark WebGPU em branch/feature flag.
+
+======================================================================
+137. RECOMENDAÇÃO SOBRE SERVIDOR DE ASSETS
+======================================================================
+
+O sistema atual de SHA-256/deduplicação é bom e deve ser preservado.
+
+Para GLB:
+- mesma estratégia hash;
+- extensão .glb;
+- Content-Type correto;
+- cache longo;
+- validação de magic;
+- limite de tamanho.
+
+Isso significa que o backend não precisa de S3 para a primeira implementação.
+
+Storage externo/CDN pode entrar futuramente.
+
+======================================================================
+138. RECOMENDAÇÃO SOBRE MODELOS REPETIDOS
+======================================================================
+
+Se dez árvores usam o mesmo GLB:
+não baixar 10 vezes.
+
+useGLTF/cache do loader deve reaproveitar asset.
+
+Para centenas de objetos idênticos:
+considerar instancing.
+
+Não clonar material/texture sem necessidade.
+
+======================================================================
+139. MAPA MUITO GRANDE
+======================================================================
+
+Se mapas chegarem perto do máximo 500x500 cells:
+- usar culling;
+- chunks;
+- instancing;
+- não criar 250 mil React elements para grid/terrain.
+
+Terrain deve ser agrupado/chunked.
+
+Grid deve ser shader/helper/lines eficientes.
+
+Fog não deve ser 250 mil divs/meshes.
+
+======================================================================
+140. FOG EM MAPA GRANDE
+======================================================================
+
+Para primeira implementação pequena:
+instanced cells é aceitável.
+
+Para mapas grandes:
+- texture mask;
+- render target;
+- chunk mask;
+- shader.
+
+Não criar uma Mesh individual por célula.
+
+======================================================================
+141. PATHFINDING
+======================================================================
+
+Não está no caminho crítico.
+
+Futuro:
+A* no grid usando:
+- walls;
+- doors;
+- terrain cost;
+- floors.
+
+Pode ser útil para NPCs e medição.
+
+Não implementar antes da movimentação manual funcionar.
+
+======================================================================
+142. NAVMESH
+======================================================================
+
+Só considerar navmesh se houver:
+- movimentação livre complexa;
+- modelos arquitetônicos importados;
+- NPC automático.
+
+Para VTT grid-based, grid + wall edges é suficiente e mais fácil de sincronizar.
+
+======================================================================
+143. OBJETO 3D IMPORTADO NÃO DEVE DEFINIR REGRA SOZINHO
+======================================================================
+
+Um GLB visual de parede não significa automaticamente blocksMovement.
+
+Regra e visual precisam ser separados.
+
+SceneObject:
+- mesh visual;
+- collider;
+- blocksVision;
+- blocksMovement.
+
+Isso permite:
+- modelo bonito;
+- collider simples;
+- server validar sem carregar Three.js.
+
+======================================================================
+144. SERVER NÃO DEVE RENDERIZAR THREE.JS
+======================================================================
+
+Backend não precisa de Three.js para regra comum.
+
+Usar geometria simples shared:
+- Box footprint;
+- segment;
+- circle;
+- floor.
+
+Evitar carregar GLB no Node para cada movimento.
+
+Client cuida do visual.
+Server cuida da regra.
+
+======================================================================
+145. PORTA COMO EXEMPLO DE SEPARAÇÃO VISUAL/REGRA
+======================================================================
+
+Visual:
+mesh GLB da porta.
+
+Regra:
+hinge + state + collider segment.
+
+Se GLB não carregar:
+porta ainda existe como regra e aparece placeholder.
+
+Excelente princípio para todo o projeto.
+
+======================================================================
+146. COMBAT READABILITY
+======================================================================
+
+Durante combate:
+opção "Tactical Camera".
+
+Ao ativar:
+- câmera sobe;
+- pitch mais alto;
+- grid forte;
+- iluminação não esconde tokens;
+- effects transparentes;
+- roofs auto-hidden.
+
+Modo "Cinematic":
+- câmera livre;
+- fog/lighting completo;
+- grid discreto.
+
+Isso pode ser adicionado depois e melhora muito UX.
+
+======================================================================
+147. FINAL
+======================================================================
+
+A implementação recomendada é incremental e preserva o investimento já feito.
+
+A arquitetura correta é:
+
+RPG PLATFORM EXISTENTE
+        |
+        +-- UI React DOM
+        |
+        +-- Zustand / Game State
+        |
+        +-- Socket.IO
+        |
+        +-- Shared Rules
+        |
+        +-- PostgreSQL / Prisma
+        |
+        +-- Renderer 2D existente
+        |
+        +-- Renderer 2.5D existente
+        |
+        +-- Renderer 3D novo
+              |
+              +-- Three.js
+              +-- React Three Fiber
+              +-- Drei
+              +-- GLB
+              +-- Lighting
+              +-- Raycasting
+              +-- Scene Editor
+              +-- Visibility
+              +-- VFX
+              +-- Spatial Audio
+
+O renderer muda.
+O jogo continua sendo o mesmo.
+
+Esse é o ponto central da expansão.
+
+FIM DO DOCUMENTO.

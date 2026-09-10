@@ -1,0 +1,529 @@
+.screen {
+  position: relative;
+  width: 100vw;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 86px 16px 34px;
+  color: #f5f1ff;
+  background: #05070a;
+  font-family:
+    "Inter",
+    "Segoe UI",
+    sans-serif;
+  isolation: isolate;
+}
+
+.screen::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background-image: url("/login-background.jpg");
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.screen::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(2, 5, 7, 0.24),
+      rgba(2, 5, 8, 0.06) 42%,
+      rgba(33, 20, 24, 0.16)
+    ),
+    radial-gradient(circle at 73% 28%, rgba(255, 204, 128, 0.12), transparent 31%),
+    radial-gradient(circle at 50% 52%, transparent 0 26%, rgba(0, 0, 0, 0.08) 59%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.18));
+  pointer-events: none;
+}
+
+.card {
+  position: relative;
+  z-index: 0;
+  width: min(548px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 80px 54px 34px;
+  background: transparent;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(150, 116, 255, 0.13), transparent 43%),
+    linear-gradient(180deg, rgba(25, 25, 36, 0.78), rgba(8, 10, 17, 0.86));
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.48),
+    inset 0 0 70px rgba(155, 133, 255, 0.07);
+  backdrop-filter: blur(11px) saturate(1.08);
+  clip-path: polygon(
+    0 26px,
+    26px 0,
+    calc(100% - 26px) 0,
+    100% 26px,
+    100% calc(100% - 26px),
+    calc(100% - 26px) 100%,
+    26px 100%,
+    0 calc(100% - 26px)
+  );
+  pointer-events: none;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  background:
+    linear-gradient(135deg, rgba(196, 188, 255, 0.82), rgba(128, 111, 194, 0.25) 40%, rgba(221, 214, 255, 0.66)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(126, 108, 197, 0.06));
+  clip-path: polygon(
+    0 26px,
+    26px 0,
+    calc(100% - 26px) 0,
+    100% 26px,
+    100% calc(100% - 26px),
+    calc(100% - 26px) 100%,
+    26px 100%,
+    0 calc(100% - 26px)
+  );
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.seal {
+  position: absolute;
+  top: -51px;
+  left: 50%;
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  color: #b197ff;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 0 14px rgba(136, 92, 255, 0.8));
+}
+
+.seal::before {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border: 1px solid rgba(201, 193, 255, 0.55);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(114, 70, 255, 0.2), transparent 62%),
+    rgba(10, 8, 22, 0.42);
+  box-shadow:
+    0 0 0 10px rgba(151, 121, 255, 0.05),
+    0 0 22px rgba(141, 91, 255, 0.5),
+    inset 0 0 20px rgba(162, 129, 255, 0.22);
+}
+
+.seal::after {
+  content: "";
+  position: absolute;
+  width: 102px;
+  height: 102px;
+  border-radius: 50%;
+  background:
+    linear-gradient(#bba8ff, #bba8ff) 50% 0 / 1px 20px no-repeat,
+    linear-gradient(#bba8ff, #bba8ff) 50% 100% / 1px 20px no-repeat,
+    linear-gradient(90deg, #bba8ff, #bba8ff) 0 50% / 20px 1px no-repeat,
+    linear-gradient(90deg, #bba8ff, #bba8ff) 100% 50% / 20px 1px no-repeat;
+  opacity: 0.62;
+}
+
+.sealIcon {
+  position: relative;
+  z-index: 1;
+  width: 46px;
+  height: 46px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  color: #f0ecff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 4vw, 2.85rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  text-shadow:
+    0 2px 1px rgba(0, 0, 0, 0.72),
+    0 0 18px rgba(164, 139, 255, 0.55);
+}
+
+.header p {
+  margin: 0;
+  color: rgba(226, 224, 236, 0.84);
+  font-size: 1.19rem;
+  line-height: 1.35;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
+
+.inputFrame {
+  position: relative;
+  height: 66px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 18px;
+  color: #a991ff;
+  background:
+    linear-gradient(180deg, rgba(13, 14, 23, 0.82), rgba(5, 6, 12, 0.62)),
+    rgba(9, 10, 18, 0.72);
+  border: 1px solid rgba(164, 148, 232, 0.76);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 24px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(0, 0, 0, 0.24);
+}
+
+.inputFrame:focus-within {
+  border-color: rgba(195, 174, 255, 0.98);
+  box-shadow:
+    0 0 18px rgba(132, 88, 255, 0.26),
+    inset 0 0 24px rgba(0, 0, 0, 0.34);
+}
+
+.inputIcon {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+}
+
+.input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f4f0ff;
+  font: inherit;
+  font-size: 1.18rem;
+}
+
+.input::placeholder {
+  color: rgba(231, 229, 236, 0.78);
+  opacity: 1;
+}
+
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f4f0ff;
+  caret-color: #f4f0ff;
+  box-shadow: 0 0 0 1000px rgba(9, 10, 18, 0.96) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.visibilityButton {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #b7a5ff;
+  background: transparent;
+  cursor: pointer;
+}
+
+.visibilityButton:hover,
+.visibilityButton:focus-visible {
+  color: #eee9ff;
+  background: rgba(154, 123, 255, 0.12);
+  outline: none;
+}
+
+.visibilityIcon {
+  width: 28px;
+  height: 28px;
+}
+
+.primaryButton {
+  position: relative;
+  height: 70px;
+  display: grid;
+  grid-template-columns: 54px 1fr 54px;
+  align-items: center;
+  margin-top: 16px;
+  border: 0;
+  color: #fff8ff;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(178, 144, 255, 0.52), transparent 38%),
+    linear-gradient(180deg, rgba(59, 39, 145, 0.94), rgba(36, 29, 84, 0.96));
+  clip-path: polygon(
+    0 18px,
+    18px 0,
+    calc(100% - 18px) 0,
+    100% 18px,
+    100% calc(100% - 18px),
+    calc(100% - 18px) 100%,
+    18px 100%,
+    0 calc(100% - 18px)
+  );
+  box-shadow:
+    0 0 22px rgba(120, 79, 255, 0.88),
+    0 0 44px rgba(97, 66, 231, 0.42),
+    inset 0 0 18px rgba(200, 181, 255, 0.28);
+  cursor: pointer;
+}
+
+.primaryButton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background:
+    linear-gradient(90deg, #a986ff, #704eff, #d6c8ff, #704eff, #a986ff);
+  clip-path: inherit;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.primaryButton::after {
+  content: "";
+  position: absolute;
+  inset: 7px 12px;
+  border-top: 1px solid rgba(238, 232, 255, 0.34);
+  border-bottom: 1px solid rgba(113, 80, 255, 0.42);
+  pointer-events: none;
+}
+
+.primaryButton:hover {
+  filter: brightness(1.08);
+}
+
+.primaryButton:focus-visible {
+  outline: 2px solid rgba(238, 232, 255, 0.85);
+  outline-offset: 4px;
+}
+
+.primaryButton:disabled {
+  cursor: wait;
+  filter: grayscale(0.18) brightness(0.82);
+}
+
+.primaryButton span {
+  position: relative;
+  z-index: 1;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.84rem;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+.buttonSpark {
+  position: relative;
+  z-index: 1;
+  width: 27px;
+  height: 27px;
+  justify-self: center;
+  color: #bda9ff;
+}
+
+.divider {
+  position: relative;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -4px 0 -2px;
+}
+
+.divider::before {
+  content: "";
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(205, 198, 235, 0.58), transparent);
+}
+
+.divider span {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(177, 162, 237, 0.86);
+  background: rgba(23, 22, 37, 0.96);
+  box-shadow: 0 0 16px rgba(144, 112, 255, 0.45);
+  transform: rotate(45deg);
+}
+
+.secondaryActions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.secondaryButton {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  border: 1px solid rgba(132, 119, 197, 0.86);
+  color: #fbf8ff;
+  background: linear-gradient(180deg, rgba(13, 14, 23, 0.8), rgba(7, 9, 16, 0.72));
+  clip-path: polygon(
+    0 12px,
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
+  cursor: pointer;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.secondaryButton:hover,
+.secondaryButton:focus-visible {
+  border-color: rgba(190, 171, 255, 0.98);
+  background: linear-gradient(180deg, rgba(32, 29, 57, 0.88), rgba(9, 10, 18, 0.78));
+  box-shadow: 0 0 18px rgba(133, 101, 255, 0.22);
+  outline: none;
+}
+
+.secondaryIcon {
+  width: 30px;
+  height: 30px;
+  color: #a98fff;
+}
+
+.error {
+  border: 1px solid rgba(255, 129, 129, 0.55);
+  border-radius: 10px;
+  background: rgba(91, 18, 25, 0.58);
+  color: #ffd1d1;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 620px) {
+  .screen {
+    padding: 72px 14px 24px;
+  }
+
+  .card {
+    gap: 18px;
+    padding: 70px 24px 28px;
+  }
+
+  .seal {
+    top: -47px;
+    width: 100px;
+    height: 100px;
+  }
+
+  .header h1 {
+    font-size: clamp(2rem, 9vw, 2.55rem);
+    white-space: normal;
+  }
+
+  .header p {
+    font-size: 1rem;
+  }
+
+  .inputFrame {
+    height: 58px;
+    gap: 12px;
+    padding: 0 14px;
+  }
+
+  .input {
+    font-size: 1rem;
+  }
+
+  .primaryButton {
+    height: 62px;
+    grid-template-columns: 42px 1fr 42px;
+  }
+
+  .primaryButton span {
+    font-size: 1.45rem;
+  }
+
+  .secondaryButton {
+    height: 56px;
+    gap: 12px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 621px) {
+  .screen {
+    padding-top: 64px;
+    padding-bottom: 22px;
+  }
+
+  .card {
+    gap: 16px;
+    padding-top: 66px;
+    padding-bottom: 28px;
+  }
+
+  .header h1 {
+    font-size: 2.55rem;
+  }
+
+  .header p {
+    font-size: 1.05rem;
+  }
+
+  .inputFrame {
+    height: 58px;
+  }
+
+  .primaryButton {
+    height: 62px;
+    margin-top: 8px;
+  }
+
+  .secondaryButton {
+    height: 54px;
+  }
+}

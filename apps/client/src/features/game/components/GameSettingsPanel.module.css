@@ -1,0 +1,467 @@
+.panel {
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #181818;
+  box-sizing: border-box;
+}
+
+.header {
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.title {
+  font-weight: 700;
+}
+
+.description {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #aaa;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 10px 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+  scrollbar-color: #4f4f4f #141414;
+  scrollbar-width: thin;
+}
+
+.content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: #141414;
+}
+
+.content::-webkit-scrollbar-thumb {
+  border: 2px solid #141414;
+  border-radius: 999px;
+  background: #4f4f4f;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+.group {
+  width: 100%;
+  flex: 0 0 auto;
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: #202020;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.groupCollapsed {
+  background: #1d1d1d;
+}
+
+.groupHeader {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-bottom: 1px solid #333;
+  background: #2a2a2a;
+  color: #ddd;
+  padding: 0 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  text-align: left;
+}
+
+.groupHeader:hover,
+.groupHeader:focus-visible {
+  background: #303030;
+  color: #fff;
+  outline: none;
+}
+
+.groupCollapsed .groupHeader {
+  border-bottom: 0;
+}
+
+.groupChevron {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: #d7c8ff;
+  background: #171717;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.groupContent {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.infoRow span {
+  color: #999;
+}
+
+.infoRow strong {
+  min-width: 0;
+  color: #eee;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.codeBox {
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #151515;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.codeBox span {
+  color: #999;
+  font-size: 12px;
+}
+
+.codeBox code {
+  color: #d7ddff;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.inviteCard {
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 12px;
+  padding: 12px;
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.22), transparent 42%),
+    #141018;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inviteCard span {
+  color: #a1a1aa;
+  font-size: 12px;
+}
+
+.inviteCard strong {
+  color: #f8fafc;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.copyGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #ddd;
+}
+
+.toggleRow div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggleRow strong {
+  font-size: 13px;
+}
+
+.toggleRow span {
+  color: #999;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.toggleRow input {
+  flex-shrink: 0;
+}
+
+.modePicker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #ddd;
+}
+
+.modePicker div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modePicker strong {
+  font-size: 13px;
+}
+
+.modePicker span {
+  color: #999;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.modeButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.modeButtons button {
+  min-height: 34px;
+  border: 1px solid #393939;
+  border-radius: 8px;
+  background: #171717;
+  color: #ddd;
+  cursor: pointer;
+}
+
+.modeButtonActive {
+  border-color: rgba(139, 92, 246, 0.75) !important;
+  background: rgba(139, 92, 246, 0.22) !important;
+  color: #fff !important;
+}
+
+.templateCard {
+  border: 1px solid rgba(218, 171, 86, 0.34);
+  border-radius: 10px;
+  padding: 10px;
+  background:
+    linear-gradient(120deg, rgba(139, 92, 246, 0.14), transparent 52%),
+    #151515;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.templateCard div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.templateCard strong {
+  color: #f6dfb4;
+  font-size: 13px;
+}
+
+.templateCard span {
+  color: #aaa;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.templateActions {
+  display: grid !important;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.muted {
+  margin: 0;
+  color: #999;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.colorPreference {
+  border: 1px solid rgba(218, 171, 86, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(218, 171, 86, 0.08), transparent 62%),
+    #151515;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.colorPreference div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.colorPreference strong {
+  color: #f6dfb4;
+  font-size: 13px;
+}
+
+.colorPreference span {
+  color: #999;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.colorPreference input {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 34px;
+  border: 1px solid rgba(169, 134, 255, 0.48);
+  border-radius: 8px;
+  background: #0d0d11;
+  cursor: pointer;
+}
+
+.permissionSummary {
+  border: 1px solid rgba(139, 92, 246, 0.44);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(139, 92, 246, 0.18), transparent),
+    #151515;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.permissionSummary span {
+  color: #aaa;
+  font-size: 12px;
+}
+
+.permissionSummary strong {
+  color: #f6dfb4;
+  font-size: 13px;
+}
+
+.permissionList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.permissionRow {
+  min-height: 42px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #151515;
+  padding: 7px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.permissionRow div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.permissionRow strong {
+  min-width: 0;
+  color: #f4f4f5;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.permissionRow span {
+  color: #8f8f99;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roleBadge {
+  flex: 0 0 auto;
+  min-width: 58px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  text-align: center;
+  font-size: 11px !important;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.roleBadgeGm {
+  border: 1px solid rgba(218, 171, 86, 0.6);
+  background: rgba(218, 171, 86, 0.16);
+  color: #f6dfb4 !important;
+}
+
+.roleBadgePlayer {
+  border: 1px solid rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.16);
+  color: #d7c8ff !important;
+}
+
+@media (min-width: 410px) {
+  .copyGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .content {
+    padding: 8px 8px 14px;
+  }
+}

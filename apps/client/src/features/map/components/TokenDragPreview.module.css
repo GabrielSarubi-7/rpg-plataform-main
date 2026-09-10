@@ -1,0 +1,103 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.originRing {
+  position: absolute;
+  border: 2px solid rgba(248, 214, 141, 0.72);
+  border-radius: 8px;
+  box-shadow:
+    0 0 16px rgba(218, 171, 86, 0.38),
+    inset 0 0 16px rgba(218, 171, 86, 0.12);
+  transform: translateZ(0);
+}
+
+.ghost {
+  position: absolute;
+  border: 2px solid rgba(139, 92, 246, 0.84);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 35% 20%, rgba(255, 255, 255, 0.22), transparent 32%),
+    rgba(17, 13, 27, 0.72);
+  box-shadow:
+    0 0 22px rgba(139, 92, 246, 0.48),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  opacity: 0.58;
+  overflow: hidden;
+  transform: translateZ(0);
+}
+
+.ghost img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 34%),
+    linear-gradient(180deg, #6d28d9, #2e1065);
+  color: #fff7ed;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.arrow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.arrowLine {
+  stroke: rgba(248, 214, 141, 0.95);
+  stroke-width: 4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.58));
+}
+
+.arrowHalo {
+  stroke: rgba(17, 12, 20, 0.86);
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.distanceText {
+  fill: #fff7ed;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: rgba(3, 3, 4, 0.92);
+  stroke-width: 5px;
+  text-anchor: middle;
+}
+
+.waypointMarker {
+  fill: rgba(139, 92, 246, 0.95);
+  stroke: rgba(248, 214, 141, 0.95);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.65));
+}
+
+.waypointText {
+  fill: #f8d68d;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: rgba(3, 3, 4, 0.92);
+  stroke-width: 4px;
+  text-anchor: middle;
+}

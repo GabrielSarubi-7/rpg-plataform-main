@@ -1,0 +1,120 @@
+.player {
+  position: absolute;
+  left: 72px;
+  bottom: 14px;
+  width: min(420px, calc(100vw - 610px));
+  min-width: 280px;
+  z-index: 500;
+  color: #fff;
+  pointer-events: auto;
+  font-family: sans-serif;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: 34px 30px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(202, 138, 4, 0.42);
+  border-radius: 9px;
+  background:
+    linear-gradient(135deg, rgba(14, 14, 18, 0.97), rgba(28, 18, 43, 0.95));
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.expandButton,
+.hideButton,
+.enableButton,
+.controls button {
+  height: 32px;
+  border: 1px solid rgba(168, 85, 247, 0.55);
+  border-radius: 7px;
+  background: rgba(17, 17, 20, 0.94);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.expandButton {
+  width: 32px;
+  padding: 0;
+}
+
+.hideButton {
+  width: 30px;
+  padding: 0;
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+}
+
+.titleBlock {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.titleBlock span {
+  color: #f3c970;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.titleBlock strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.enableButton {
+  padding: 0 10px;
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+}
+
+.controls button {
+  padding: 0 10px;
+}
+
+.embed {
+  width: 100%;
+  height: 92px;
+  margin-top: 8px;
+  border: 1px solid rgba(202, 138, 4, 0.34);
+  border-radius: 9px;
+  background: #050506;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+.hiddenEmbed {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0.01;
+  pointer-events: none;
+}
+
+@media (max-width: 980px) {
+  .player {
+    width: min(420px, calc(100vw - 92px));
+  }
+
+  .summary {
+    grid-template-columns: 34px 30px minmax(0, 1fr) auto;
+  }
+
+  .controls {
+    display: none;
+  }
+}

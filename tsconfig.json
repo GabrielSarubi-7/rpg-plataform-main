@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "5.0",
+    
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/client/src/*"],
+      "@shared/*": ["shared/*"]
+    }
+  }
+}

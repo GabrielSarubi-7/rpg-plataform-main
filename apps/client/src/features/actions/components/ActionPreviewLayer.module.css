@@ -1,0 +1,97 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 4;
+}
+
+.layer25d {
+  mix-blend-mode: screen;
+}
+
+.range {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-dasharray: 8 8;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 7px rgba(255, 210, 110, 0.45));
+}
+
+.path {
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+  animation: actionDash 0.9s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.7));
+}
+
+.pathGlow {
+  stroke-width: 10;
+  stroke-opacity: 0.2;
+  vector-effect: non-scaling-stroke;
+  filter: blur(3px);
+}
+
+.shape {
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+  filter:
+    drop-shadow(0 0 8px rgba(255, 213, 112, 0.75))
+    drop-shadow(0 0 20px rgba(139, 92, 246, 0.42));
+}
+
+.impactCore {
+  filter:
+    drop-shadow(0 0 7px rgba(255, 255, 255, 0.85))
+    drop-shadow(0 0 14px rgba(251, 191, 36, 0.75));
+}
+
+.affectedToken {
+  fill: none;
+  stroke-width: 3;
+  stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 208, 0.65));
+}
+
+.resolvedPreview {
+  animation: resolvedPreviewFade 3.2s ease-out forwards;
+}
+
+.persistentPreview {
+  opacity: 0.92;
+}
+
+.persistentPreview .shape {
+  filter:
+    drop-shadow(0 0 10px rgba(167, 139, 250, 0.84))
+    drop-shadow(0 0 24px rgba(88, 28, 135, 0.5));
+}
+
+.effectLabel {
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.88);
+  stroke-width: 5px;
+  fill: #fff7d6;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.72));
+}
+
+@keyframes actionDash {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
+@keyframes resolvedPreviewFade {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,101 @@
+.game-icon-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid #444;
+  background: #181818;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+}
+
+.game-icon-button:hover {
+  background: #232323;
+  border-color: #666;
+}
+
+.game-panel {
+  background: #111;
+  color: white;
+  border: 1px solid #333;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  font-family: sans-serif;
+}
+
+.game-input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #1d1d1d;
+  color: white;
+  outline: none;
+}
+
+.game-input:focus {
+  border-color: #5d7cff;
+  box-shadow: 0 0 0 2px rgba(93, 124, 255, 0.2);
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(139, 92, 246, 0.55);
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
+    rgba(8, 8, 8, 0.82);
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  margin: 0;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:checked {
+  border-color: rgba(218, 171, 86, 0.75);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4 9.2 7.3 12.5 14 5.8' fill='none' stroke='%23fff3d0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(218, 171, 86, 0.42), rgba(139, 92, 246, 0.28)),
+    #21162f;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.28);
+}
+
+input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  opacity: 0.55;
+}
+
+.game-button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #1e1e1e;
+  color: white;
+  cursor: pointer;
+}
+
+.game-button:hover {
+  background: #292929;
+}
+
+.game-button-primary {
+  background: #2d5cdd;
+  border-color: #466ee0;
+}
+
+.game-button-primary:hover {
+  background: #3d6cff;
+}
+
+.game-card {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #171717;
+}

@@ -1,0 +1,688 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 92;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(124, 58, 237, 0.2), transparent 38%),
+    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.14), transparent 36%),
+    rgba(0, 0, 0, 0.54);
+  backdrop-filter: blur(5px);
+}
+
+.modal {
+  width: min(1440px, calc(100vw - 44px));
+  height: min(860px, calc(100vh - 44px));
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  border: 1px solid rgba(167, 139, 250, 0.32);
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(21, 18, 32, 0.98), rgba(8, 10, 14, 0.99)),
+    #090b0f;
+  color: #f8fafc;
+  box-shadow:
+    0 30px 110px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 18px 22px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(90deg, rgba(124, 58, 237, 0.12), transparent 48%),
+    rgba(255, 255, 255, 0.025);
+}
+
+.eyebrow {
+  color: #facc15;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 4px 0 4px;
+  font-size: 24px;
+}
+
+.header p {
+  max-width: 850px;
+  margin: 0;
+  color: #b7b3c6;
+  line-height: 1.42;
+}
+
+.closeButton {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f8fafc;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(127, 29, 29, 0.25);
+}
+
+.body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 306px minmax(0, 1fr);
+}
+
+.palette {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.24);
+  scrollbar-color: rgba(167, 139, 250, 0.7) rgba(255, 255, 255, 0.05);
+  scrollbar-width: thin;
+}
+
+.palette::-webkit-scrollbar,
+.boardViewport::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.palette::-webkit-scrollbar-track,
+.boardViewport::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.palette::-webkit-scrollbar-thumb,
+.boardViewport::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(11, 13, 17, 0.9);
+  border-radius: 999px;
+  background: rgba(167, 139, 250, 0.72);
+}
+
+.paletteCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.09), transparent 40%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.paletteCard h3 {
+  margin: 0;
+  color: #f8d77a;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.paletteCard label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #d7d3e4;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.paletteCard input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 0 11px;
+  background: rgba(0, 0, 0, 0.38);
+  color: #f8fafc;
+  outline: none;
+}
+
+.paletteCard input:focus {
+  border-color: rgba(167, 139, 250, 0.75);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.22);
+}
+
+.compactGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+  gap: 8px;
+}
+
+.toolGrid button,
+.terrainButton,
+.objectButton,
+.primaryButton,
+.secondaryButton {
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.toolGrid button:hover,
+.terrainButton:hover,
+.objectButton:hover,
+.secondaryButton:hover {
+  border-color: rgba(167, 139, 250, 0.68);
+  background: rgba(124, 58, 237, 0.16);
+}
+
+.activeTool {
+  border-color: rgba(167, 139, 250, 0.85) !important;
+  background:
+    linear-gradient(135deg, rgba(124, 58, 237, 0.44), rgba(49, 46, 129, 0.4)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.terrainGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.objectGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.objectButton {
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 6px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.objectButton span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.2), transparent 35%),
+    rgba(0, 0, 0, 0.42);
+  font-size: 18px;
+}
+
+.objectButton strong {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.objectButtonActive {
+  border-color: rgba(45, 212, 191, 0.9) !important;
+  background:
+    radial-gradient(circle at top, rgba(45, 212, 191, 0.18), transparent 52%),
+    rgba(20, 184, 166, 0.1) !important;
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.18);
+}
+
+.terrainButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 8px 10px;
+  min-height: 44px;
+  font-size: 12px;
+}
+
+.terrainButton span {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.terrainButtonActive {
+  border-color: rgba(250, 204, 21, 0.88) !important;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.18);
+}
+
+.valuePill {
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.hint {
+  margin: 0;
+  color: #aaa3ba;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stats span {
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.32);
+  color: #d7d3e4;
+  text-align: center;
+  font-weight: 900;
+}
+
+.workspace {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.08), transparent 38%),
+    #080a0f;
+}
+
+.workspaceTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  color: #cbc7d8;
+}
+
+.workspaceTopbar strong {
+  color: #fff;
+}
+
+.workspaceTopbar span {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.boardViewport {
+  position: relative;
+  min-height: 0;
+  overflow: auto;
+  padding: 26px;
+  scrollbar-color: rgba(167, 139, 250, 0.7) rgba(255, 255, 255, 0.05);
+  scrollbar-width: thin;
+}
+
+.board {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-radius: 16px;
+  background-color: #151821;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(rgba(168, 85, 247, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168, 85, 247, 0.2) 1px, transparent 1px);
+  background-size:
+    var(--editor-cell-size) var(--editor-cell-size),
+    var(--editor-cell-size) var(--editor-cell-size),
+    calc(var(--editor-cell-size) * 5) calc(var(--editor-cell-size) * 5),
+    calc(var(--editor-cell-size) * 5) calc(var(--editor-cell-size) * 5);
+  box-shadow:
+    0 20px 70px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  cursor: crosshair;
+}
+
+.boardImage {
+  position: absolute;
+  inset: 0;
+  opacity: 0.54;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  pointer-events: none;
+  filter: saturate(0.92) contrast(0.92);
+}
+
+.editorTerrainCell,
+.editorWall,
+.editorObject,
+.brushGhost {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.editorTerrainCell {
+  display: grid;
+  place-items: end start;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  opacity: 0.86;
+  box-shadow:
+    inset 0 0 14px rgba(255, 255, 255, 0.08),
+    0 calc(var(--height-level, 0) * -0.32px) 0 rgba(255, 255, 255, 0.18),
+    0 calc(var(--height-level, 0) * 0.75px) 13px rgba(0, 0, 0, 0.38);
+}
+
+.editorTerrainCell span {
+  position: relative;
+  z-index: 2;
+  border-radius: 999px;
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.66);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.editorWall {
+  z-index: 4;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 calc(var(--wall-height, 15) * 0.18px) calc(var(--wall-height, 15) * 0.45px)
+      rgba(0, 0, 0, 0.46);
+}
+
+.editorWallHorizontal {
+  border-top: 2px solid rgba(255, 255, 255, 0.28);
+}
+
+.editorWallVertical {
+  border-left: 2px solid rgba(255, 255, 255, 0.28);
+}
+
+.editorObject {
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  opacity: 0.92;
+  transform: translateY(calc(var(--object-elevation, 0) * -0.35px));
+  box-shadow:
+    0 calc(var(--object-height, 8) * 0.22px) calc(var(--object-height, 8) * 0.45px)
+      rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+.editorObject::before {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -8px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.48);
+  filter: blur(3px);
+}
+
+.editorObject span {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(15px, calc(var(--editor-cell-size) * 0.52), 28px);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+}
+
+.brushGhost {
+  z-index: 9;
+  border: 2px solid rgba(45, 212, 191, 0.9);
+  border-radius: 8px;
+  background: rgba(45, 212, 191, 0.14);
+  box-shadow:
+    0 0 18px rgba(45, 212, 191, 0.24),
+    inset 0 0 18px rgba(45, 212, 191, 0.12);
+}
+
+.ghost-erase {
+  border-color: rgba(248, 113, 113, 0.9);
+  background: rgba(127, 29, 29, 0.18);
+  box-shadow: 0 0 18px rgba(248, 113, 113, 0.25);
+}
+
+.ghost-wall {
+  border-color: rgba(250, 204, 21, 0.92);
+  background: rgba(250, 204, 21, 0.11);
+}
+
+.ghost-object {
+  border-color: rgba(167, 139, 250, 0.95);
+  background: rgba(124, 58, 237, 0.16);
+}
+
+.stone {
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.18), transparent 25%),
+    linear-gradient(135deg, rgba(148, 163, 184, 0.72), rgba(51, 65, 85, 0.76));
+}
+
+.grass {
+  background:
+    radial-gradient(circle at 20% 80%, rgba(217, 249, 157, 0.34), transparent 24%),
+    linear-gradient(135deg, rgba(34, 197, 94, 0.72), rgba(21, 128, 61, 0.78));
+}
+
+.dirt {
+  background:
+    radial-gradient(circle at 72% 32%, rgba(251, 191, 36, 0.26), transparent 24%),
+    linear-gradient(135deg, rgba(146, 64, 14, 0.74), rgba(67, 20, 7, 0.82));
+}
+
+.wood {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(180, 83, 9, 0.8) 0,
+      rgba(180, 83, 9, 0.8) 8px,
+      rgba(120, 53, 15, 0.9) 8px,
+      rgba(120, 53, 15, 0.9) 16px
+    );
+}
+
+.water {
+  background:
+    radial-gradient(circle at 25% 35%, rgba(224, 242, 254, 0.44), transparent 22%),
+    linear-gradient(135deg, rgba(14, 165, 233, 0.72), rgba(37, 99, 235, 0.78));
+}
+
+.lava {
+  background:
+    radial-gradient(circle at 30% 40%, rgba(254, 240, 138, 0.7), transparent 18%),
+    radial-gradient(circle at 70% 65%, rgba(248, 113, 113, 0.74), transparent 22%),
+    linear-gradient(135deg, rgba(239, 68, 68, 0.86), rgba(69, 10, 10, 0.9));
+}
+
+.snow {
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9), transparent 24%),
+    linear-gradient(135deg, rgba(226, 232, 240, 0.86), rgba(125, 211, 252, 0.52));
+}
+
+.void {
+  background:
+    radial-gradient(circle at center, rgba(88, 28, 135, 0.44), transparent 36%),
+    rgba(0, 0, 0, 0.88);
+}
+
+.metal {
+  background: linear-gradient(180deg, #e5e7eb, #475569);
+}
+
+.force {
+  background: linear-gradient(180deg, rgba(103, 232, 249, 0.92), rgba(59, 130, 246, 0.68));
+  box-shadow:
+    0 0 16px rgba(34, 211, 238, 0.62),
+    inset 0 0 8px rgba(255, 255, 255, 0.38);
+}
+
+.rock {
+  border-radius: 46% 42% 54% 36%;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.22), transparent 28%),
+    linear-gradient(135deg, rgba(148, 163, 184, 0.88), rgba(30, 41, 59, 0.92));
+}
+
+.tree {
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 45% 34%, rgba(190, 242, 100, 0.28), transparent 28%),
+    radial-gradient(circle, rgba(34, 197, 94, 0.88), rgba(20, 83, 45, 0.96));
+}
+
+.crate {
+  border-radius: 5px;
+  background:
+    linear-gradient(45deg, transparent 48%, rgba(255, 255, 255, 0.24) 49%, transparent 51%),
+    linear-gradient(135deg, #b45309, #451a03);
+}
+
+.pillar {
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.3), transparent 28%),
+    linear-gradient(135deg, #d6d3d1, #57534e);
+}
+
+.door {
+  border-radius: 7px;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.22) 48%, rgba(255, 255, 255, 0.24) 49%, transparent 52%),
+    linear-gradient(135deg, #78350f, #2b1206);
+}
+
+.bridge {
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(217, 119, 6, 0.88) 0,
+      rgba(217, 119, 6, 0.88) 8px,
+      rgba(92, 38, 5, 0.92) 8px,
+      rgba(92, 38, 5, 0.92) 13px
+    );
+}
+
+.stairs {
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(226, 232, 240, 0.88) 0,
+      rgba(226, 232, 240, 0.88) 7px,
+      rgba(71, 85, 105, 0.9) 7px,
+      rgba(71, 85, 105, 0.9) 13px
+    );
+}
+
+.platform {
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.2), transparent 32%),
+    linear-gradient(135deg, rgba(71, 85, 105, 0.9), rgba(15, 23, 42, 0.96));
+}
+
+.campfire {
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(254, 240, 138, 0.85), rgba(249, 115, 22, 0.55) 38%, rgba(69, 10, 10, 0.82));
+  box-shadow:
+    0 0 22px rgba(249, 115, 22, 0.58),
+    inset 0 0 15px rgba(254, 202, 202, 0.28);
+}
+
+.error {
+  margin: 0;
+  padding: 10px 18px;
+  border-top: 1px solid rgba(248, 113, 113, 0.22);
+  background: rgba(127, 29, 29, 0.18);
+  color: #fecaca;
+  font-weight: 800;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.primaryButton,
+.secondaryButton {
+  min-width: 132px;
+  padding: 0 18px;
+}
+
+.primaryButton {
+  border-color: rgba(96, 165, 250, 0.6);
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+}
+
+.primaryButton:disabled {
+  cursor: default;
+  opacity: 0.68;
+}
+
+.secondaryButton {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+@media (max-width: 980px) {
+  .modal {
+    height: calc(100vh - 24px);
+    width: calc(100vw - 24px);
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .palette {
+    max-height: 42vh;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .toolGrid,
+  .objectGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

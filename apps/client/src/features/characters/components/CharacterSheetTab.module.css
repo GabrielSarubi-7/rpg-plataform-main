@@ -1,0 +1,1213 @@
+﻿.sheet {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns:
+    minmax(280px, 0.95fr)
+    minmax(360px, 1.15fr)
+    minmax(220px, 250px);
+  grid-template-areas:
+    "character vitals quick"
+    "abilities abilities quick";
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+}
+
+.characterPanel,
+.identityPanel,
+.vitalsPanel,
+.quickStats,
+.card,
+.abilityCard {
+  min-width: 0;
+  border: 1px solid rgba(218, 171, 86, 0.22);
+  background: rgba(18, 17, 17, 0.94);
+}
+
+.characterPanel {
+  grid-area: character;
+  border-radius: 20px;
+  display: grid;
+  grid-template-columns: clamp(112px, 10vw, 136px) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 12px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at top left, rgba(218, 171, 86, 0.1), transparent 34%),
+    rgba(18, 17, 17, 0.96);
+}
+
+.portraitPreview {
+  grid-row: 1 / span 2;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(218, 171, 86, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 55%),
+    #0d0c0c;
+  background-position: center;
+  background-size: cover;
+  color: #7c7772;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.portraitPreview span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.characterMeta {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding-top: 3px;
+}
+
+.characterMeta strong {
+  color: #fff7ed;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.characterMeta span {
+  color: #d7cabd;
+  font-size: 14px;
+}
+
+.characterTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.characterTags small {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #d8d1c9;
+  padding: 5px 9px;
+}
+
+.activeCharacterToggle {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.08);
+  color: #d8d1c9;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.activeCharacterToggleOn {
+  border-color: rgba(218, 171, 86, 0.55);
+  background: rgba(218, 171, 86, 0.16);
+  color: #ffe2a8;
+}
+
+.activeCharacterToggle:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.characterActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-self: end;
+}
+
+.characterActions button,
+.identityPanel header button,
+.deathSavePanel button,
+.recoveryRollButton {
+  min-height: 34px;
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: 12px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #e9ddff;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+.characterActions button:hover,
+.identityPanel header button:hover,
+.deathSavePanel button:hover,
+.recoveryRollButton:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.resourceToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.resourceToolbar button,
+.removeResourceButton {
+  min-height: 32px;
+  border: 1px solid rgba(139, 92, 246, 0.34);
+  border-radius: 10px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #eadcff;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+.resourceLockToggle {
+  display: none;
+}
+
+.resourceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.resourceCard {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(218, 171, 86, 0.18);
+  border-radius: 14px;
+  background: rgba(8, 8, 8, 0.62);
+  padding: 10px;
+}
+
+.resourceIcon {
+  width: 38px;
+  height: 38px;
+  border: 1px solid color-mix(in srgb, var(--resource-color, #8b5cf6) 70%, white 10%);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.42), transparent 28%),
+    color-mix(in srgb, var(--resource-color, #8b5cf6) 42%, #090909);
+  color: #fff;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--resource-color, #8b5cf6) 34%, transparent);
+}
+
+.resourceBody {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.resourceBody > input,
+.resourceCounters input,
+.resourceCustomize input,
+.resourceRecoverySelect {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  padding: 7px 8px;
+}
+
+.resourceCustomize {
+  display: grid;
+  grid-template-columns: 64px 42px auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.resourceCustomize input[type="color"] {
+  min-height: 32px;
+  padding: 3px;
+}
+
+.imageUploadControls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.imageUploadButton,
+.clearImageButton {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #ddd;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.imageUploadButton svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.imageUploadButton:hover,
+.clearImageButton:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.16);
+  color: #fff;
+}
+
+.clearImageButton {
+  border-color: rgba(255, 90, 90, 0.36);
+  color: #fecaca;
+  font-weight: 900;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.resourceRecoverySelect {
+  min-height: 32px;
+}
+
+.resourceCounters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.resourceCounters span {
+  color: #b8afa7;
+}
+
+.resourceCounters input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.resourcePips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.resourcePips span {
+  width: 13px;
+  height: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.resourcePipFilled {
+  border-color: color-mix(in srgb, var(--resource-color, #8b5cf6) 70%, white 12%) !important;
+  background: var(--resource-color, #8b5cf6) !important;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--resource-color, #8b5cf6) 54%, transparent);
+}
+
+.removeResourceButton {
+  width: 30px;
+  padding: 0;
+  border-color: rgba(255, 90, 90, 0.36);
+  background: rgba(120, 20, 20, 0.22);
+  color: #fecaca;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #d8d1c9;
+  font-size: 11px;
+}
+
+.field input,
+.field select,
+.field textarea,
+.statBox input,
+.customSection input,
+.customField input,
+.customField select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(8, 8, 8, 0.94);
+  color: #f8f8f8;
+  padding: 9px 11px;
+}
+
+.identityPanel {
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.12), transparent 35%),
+    rgba(18, 17, 17, 0.94);
+  padding: 16px;
+}
+
+.identityPanel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.identityPanel header div {
+  display: grid;
+  gap: 3px;
+}
+
+.identityPanel header span,
+.hpBlock > span,
+.card h3 {
+  color: #e8bd69;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.identityPanel header strong {
+  color: #fff7ed;
+  font-size: 22px;
+}
+
+.identityGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vitalsPanel {
+  grid-area: vitals;
+  align-self: start;
+  border-radius: 20px;
+  display: grid;
+  padding: 14px;
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 34%),
+    rgba(18, 17, 17, 0.96);
+}
+
+.hpBlock {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+}
+
+.hpHeadline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+.hpHeadline strong {
+  align-self: center;
+  color: #fff7ed;
+  font-size: 24px;
+  padding-bottom: 10px;
+}
+
+.hpHeadline .field {
+  color: #f3dfba;
+  font-weight: 700;
+}
+
+.hpHeadline .field input {
+  min-height: 56px;
+  border-color: rgba(132, 204, 22, 0.34);
+  background:
+    linear-gradient(180deg, rgba(31, 41, 23, 0.96), rgba(9, 12, 8, 0.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 0 1px rgba(0, 0, 0, 0.2);
+  color: #fffdf8;
+  font-size: 24px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.hpTrack {
+  height: 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.hpTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #16a34a, #84cc16);
+  box-shadow: 0 0 18px rgba(132, 204, 22, 0.35);
+}
+
+.deathSavePanel {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 7px;
+  padding-top: 11px;
+}
+
+.deathSavePanel > strong {
+  color: #fff7ed;
+  font-size: 18px;
+}
+
+.deathSavePanel > button {
+  min-height: 34px;
+}
+
+.deathSaveDivider {
+  height: 1px;
+  margin-top: 2px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.stabilizeButton {
+  min-height: 34px;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: #fff7ed !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rollDeathSaveButton {
+  min-height: 34px;
+  border-color: rgba(212, 205, 175, 0.2) !important;
+  background: rgba(137, 134, 104, 0.7) !important;
+  color: #fffdf5 !important;
+}
+
+.reviveButton {
+  border-color: rgba(34, 197, 94, 0.34);
+  background: rgba(34, 197, 94, 0.12);
+  color: #d7ffe5;
+}
+
+.reviveButton:hover {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.deathSavePanel > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.deathSaveTrack {
+  display: grid;
+  gap: 6px;
+}
+
+.deathSaveTrack span {
+  color: #d8d1c9;
+  font-size: 12px;
+}
+
+.deathSaveTrack div {
+  display: flex;
+  gap: 8px;
+}
+
+.deathSaveTrack button {
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  border-radius: 7px;
+  background: rgba(127, 29, 29, 0.18);
+  cursor: pointer;
+  padding: 0;
+}
+
+.deathSaveTrack .deathSaveChecked {
+  background: rgba(239, 68, 68, 0.65);
+}
+
+.quickStats {
+  grid-area: quick;
+  align-self: start;
+  border-radius: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.quickStats > :last-child {
+  grid-column: 1 / -1;
+}
+
+.statBox {
+  min-height: 60px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  background: rgba(9, 9, 9, 0.86);
+  color: white;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 9px;
+  text-align: center;
+}
+
+button.statBox {
+  cursor: pointer;
+}
+
+.statBox span {
+  color: #baa784;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.statBox strong,
+.statBox input {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.statBox input {
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  text-align: center;
+}
+
+.rollableStatBox button {
+  min-height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.18);
+  color: #e9ddff;
+  cursor: pointer;
+  padding: 0 10px;
+}
+
+.abilities {
+  grid-area: abilities;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.abilityCard {
+  border-radius: 18px;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 12px;
+}
+
+.abilityCard strong {
+  color: #e8bd69;
+}
+
+.abilityScore {
+  width: 78px;
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 14px;
+  background: rgba(8, 8, 8, 0.94);
+  color: white;
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.rollPill {
+  min-width: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff7ed;
+  cursor: pointer;
+  padding: 5px 11px;
+  text-align: center;
+}
+
+.rollPill:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns:
+    minmax(250px, 286px)
+    minmax(360px, 1fr)
+    minmax(250px, 286px);
+  gap: 12px;
+  align-items: start;
+  min-width: 0;
+}
+
+.sideColumn,
+.mainColumn {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.card {
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.card h3 {
+  margin: 0 0 12px;
+}
+
+.field textarea {
+  min-height: 62px;
+  resize: vertical;
+}
+
+.saveList,
+.skillList,
+.stackFields,
+.actionPreviewList,
+.customSections {
+  display: grid;
+  gap: 8px;
+}
+
+.saveRow {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 52px 58px;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.saveRow > button:first-child {
+  min-height: 31px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #777;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.proficiencyActive {
+  border-color: rgba(139, 92, 246, 0.42) !important;
+  background: rgba(139, 92, 246, 0.2) !important;
+  color: #f0e7ff !important;
+}
+
+.saveRollButton,
+.recoveryRollButton {
+  min-height: 29px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #ddd;
+  cursor: pointer;
+}
+
+.saveRow input[type="number"],
+.skillRow input[type="number"] {
+  width: 58px;
+  min-height: 31px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(8, 8, 8, 0.94);
+  color: white;
+  padding: 4px 7px;
+}
+
+.skillRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 48px 52px;
+  gap: 8px;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 13px;
+  background:
+    linear-gradient(90deg, rgba(139, 92, 246, 0.05), transparent 30%),
+    rgba(255, 255, 255, 0.018);
+  padding: 6px 7px;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.skillRow:hover {
+  border-color: rgba(218, 171, 86, 0.16);
+  background:
+    linear-gradient(90deg, rgba(139, 92, 246, 0.09), transparent 34%),
+    rgba(255, 255, 255, 0.03);
+}
+
+.skillNameGroup {
+  min-width: 0;
+  display: grid;
+  align-items: center;
+  gap: 3px;
+}
+
+.skillNameGroup strong {
+  min-width: 0;
+  color: #f5efe8;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.skillNameGroup small {
+  width: fit-content;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #b9b1a8;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 4px 5px;
+}
+
+.skillProficiencyButton,
+.skillMenuDot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+}
+
+.skillProficiencyButton {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  justify-self: center;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.skillProficiencyButton:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.08);
+}
+
+.skillUntrained {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  background: transparent !important;
+}
+
+.skillHalf {
+  border-color: rgba(239, 68, 68, 0.72) !important;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.75) 50%, transparent 50%) !important;
+}
+
+.skillProficient {
+  border-color: rgba(239, 68, 68, 0.72) !important;
+  background: rgba(127, 29, 29, 0.68) !important;
+}
+
+.skillExpertise {
+  border-color: rgba(239, 68, 68, 0.92) !important;
+  background: rgba(220, 38, 38, 0.9) !important;
+  box-shadow:
+    inset 0 0 0 3px rgba(127, 29, 29, 0.95),
+    0 0 10px rgba(239, 68, 68, 0.26);
+}
+
+.skillRollButton {
+  min-height: 30px;
+  border: 1px solid rgba(218, 171, 86, 0.18);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(218, 171, 86, 0.1), rgba(255, 255, 255, 0.03));
+  color: #fff3df;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.skillRollButton:hover {
+  border-color: rgba(218, 171, 86, 0.34);
+  background:
+    linear-gradient(180deg, rgba(218, 171, 86, 0.18), rgba(255, 255, 255, 0.04));
+}
+
+.skillProficiencyMenu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  width: min(220px, calc(100vw - 72px));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.12), transparent 40%),
+    rgba(24, 22, 23, 0.98);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.55);
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+}
+
+.skillProficiencyMenu button {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  min-height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #d8d1c9;
+  cursor: pointer;
+  padding: 0 8px;
+  text-align: left;
+}
+
+.skillProficiencyMenu button:hover,
+.skillProficiencyMenu .skillProficiencyMenuActive {
+  background: rgba(127, 29, 29, 0.32) !important;
+  color: #fff7ed !important;
+}
+
+.skillProficiencyMenu strong {
+  font-size: 12px;
+}
+
+.skillProficiencyMenu em {
+  color: #f5d08c;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.skillRow input[type="number"] {
+  width: 52px;
+  justify-self: end;
+  text-align: center;
+}
+
+.actionPreviewRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.actionPreviewRow:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.actionPreviewMain {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 0;
+  text-align: left;
+}
+
+.actionPreviewMain:hover strong {
+  color: #f5d08c;
+}
+
+.actionPreviewIcon {
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.14);
+  color: #f2e8ff;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 900;
+  object-fit: cover;
+}
+
+.actionPreviewRow strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actionPreviewRow small {
+  white-space: nowrap;
+}
+
+.actionPreviewRow small,
+.muted {
+  color: #a8a19a;
+}
+
+.actionPreviewButtons {
+  display: flex;
+  gap: 6px;
+}
+
+.actionPreviewButtons button {
+  min-height: 28px;
+  border: 1px solid rgba(139, 92, 246, 0.24);
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.1);
+  color: #eadfff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 10px;
+}
+
+.actionPreviewButtons button:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.recoveryGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.recoveryRollButton {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.customSectionToolbar button,
+.customSection button,
+.customField button {
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: white;
+  cursor: pointer;
+  padding: 0 11px;
+}
+
+.customSections {
+  margin-top: 10px;
+}
+
+.customSection {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.customSection header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+}
+
+.customFields {
+  display: grid;
+  gap: 8px;
+}
+
+.customField {
+  display: grid;
+  grid-template-columns: 1fr 120px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.customField input[type="checkbox"] {
+  width: 20px;
+  min-height: 20px;
+}
+
+.notes {
+  width: 100%;
+  min-height: 150px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(8, 8, 8, 0.94);
+  color: white;
+  padding: 11px;
+  resize: vertical;
+}
+
+@media (max-width: 1320px) {
+  .hero {
+    grid-template-columns: minmax(280px, 0.95fr) minmax(360px, 1.05fr);
+    grid-template-areas:
+      "character vitals"
+      "abilities abilities"
+      "quick quick";
+  }
+
+  .quickStats {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .quickStats > :last-child {
+    grid-column: auto;
+  }
+
+  .identityGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .columns {
+    grid-template-columns: minmax(250px, 0.84fr) minmax(360px, 1.16fr);
+  }
+
+  .columns > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1040px) {
+  .hero {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "character"
+      "vitals"
+      "abilities"
+      "quick";
+  }
+
+  .quickStats {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .quickStats > :last-child {
+    grid-column: auto;
+  }
+
+  .abilities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .identityGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+
+  .columns > :last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .characterPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .portraitPreview {
+    grid-row: auto;
+    width: 100%;
+    max-width: 220px;
+    justify-self: start;
+  }
+
+  .quickStats,
+  .identityGrid,
+  .abilities,
+  .recoveryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .quickStats > :last-child {
+    grid-column: auto;
+  }
+
+  .hpHeadline {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hpHeadline strong {
+    display: none;
+  }
+
+  .customSection header,
+  .customField {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .abilities {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hpHeadline {
+    grid-template-columns: 1fr;
+  }
+
+  .quickStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quickStats > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .saveRow {
+    grid-template-columns: 32px minmax(0, 1fr) 52px;
+  }
+
+  .saveRow input[type="number"] {
+    grid-column: 2 / -1;
+    width: 100%;
+  }
+
+  .skillRow {
+    grid-template-columns: 22px minmax(0, 1fr) 48px;
+  }
+
+  .skillRow input[type="number"] {
+    grid-column: 2 / -1;
+    width: 100%;
+  }
+}

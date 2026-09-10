@@ -1,0 +1,113 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at center, rgba(139, 92, 246, 0.16), transparent 42%),
+    rgba(4, 4, 5, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.dialog {
+  width: min(420px, 100%);
+  border: 1px solid rgba(218, 171, 86, 0.34);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.16), transparent 36%),
+    linear-gradient(180deg, rgba(28, 24, 22, 0.98), rgba(13, 12, 13, 0.98));
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: #fff7ed;
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.crest {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(139, 92, 246, 0.38);
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.14);
+  color: #e9ddff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+
+.dialog header {
+  display: grid;
+  gap: 4px;
+}
+
+.dialog header span {
+  color: #c8b28a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dialog h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.dialog p {
+  margin: 0;
+  color: #d9d1ca;
+  line-height: 1.5;
+}
+
+.dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dialog button {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff7ed;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 14px;
+}
+
+.dialog button:last-child {
+  border-color: rgba(139, 92, 246, 0.42);
+  background: rgba(139, 92, 246, 0.22);
+}
+
+.dialog button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dialog button:last-child:hover {
+  background: rgba(139, 92, 246, 0.3);
+}
+
+.dangerDialog {
+  border-color: rgba(255, 90, 90, 0.4);
+}
+
+.dangerDialog .crest {
+  border-color: rgba(255, 90, 90, 0.45);
+  background: rgba(160, 30, 30, 0.22);
+  color: #ffb7b7;
+}
+
+.dangerDialog button:last-child {
+  border-color: rgba(255, 90, 90, 0.45);
+  background: rgba(160, 30, 30, 0.28);
+}
+
+.dangerDialog button:last-child:hover {
+  background: rgba(190, 40, 40, 0.38);
+}

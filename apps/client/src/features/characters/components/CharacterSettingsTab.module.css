@@ -1,0 +1,197 @@
+.layout {
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  border: 1px solid rgba(218, 171, 86, 0.24);
+  border-radius: 18px;
+  background: rgba(19, 18, 18, 0.94);
+  padding: 18px;
+}
+
+.sectionHeader {
+  margin-bottom: 16px;
+}
+
+.sectionHeader span {
+  color: #e8bd69;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sectionHeader p {
+  margin: 7px 0 0;
+  color: #bcb4aa;
+}
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.imageBox {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(10, 10, 10, 0.7);
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.imageBox strong {
+  color: #f6dfb4;
+}
+
+.imagePreview {
+  height: 220px;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  background: #0c0b0b;
+  background-size: cover;
+  background-position: center;
+  color: #7f7a75;
+  display: grid;
+  place-items: center;
+}
+
+.imageHelp {
+  min-height: 34px;
+  margin: 0;
+  color: #bcb4aa;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.imageHelp strong {
+  color: #d8cbff;
+  font-size: inherit;
+}
+
+.urlField {
+  display: grid;
+  gap: 7px;
+}
+
+.urlField span {
+  color: #d7d0c8;
+  font-size: 12px;
+}
+
+.urlField input,
+.field select {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  background: rgba(8, 8, 8, 0.96);
+  color: #f7f7f7;
+  padding: 9px 11px;
+}
+
+.urlField input {
+  text-overflow: ellipsis;
+}
+
+.imageActions {
+  display: flex;
+  gap: 8px;
+}
+
+.imageActions label,
+.imageActions button {
+  min-height: 38px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0 13px;
+}
+
+.imageActions label {
+  border: 1px solid rgba(139, 92, 246, 0.32);
+  background: rgba(139, 92, 246, 0.14);
+  color: #e9ddff;
+  display: inline-flex;
+  align-items: center;
+}
+
+.imageActions button {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #d7d0c8;
+}
+
+.imageActions label:hover {
+  background: rgba(139, 92, 246, 0.22);
+}
+
+.imageActions button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid rgba(139, 92, 246, 0.24);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at top left, rgba(139, 92, 246, 0.12), transparent 45%),
+    rgba(8, 8, 8, 0.62);
+  color: #eee;
+  padding: 12px;
+}
+
+.toggleRow div {
+  display: grid;
+  gap: 5px;
+}
+
+.toggleRow strong {
+  color: #f6dfb4;
+}
+
+.toggleRow span {
+  color: #bcb4aa;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field span {
+  color: #d7d0c8;
+  font-size: 12px;
+}
+
+.notice {
+  margin-top: 14px;
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: 14px;
+  background: rgba(139, 92, 246, 0.1);
+  color: #d8cbff;
+  padding: 12px 14px;
+}
+
+@media (max-width: 820px) {
+  .imageGrid,
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+}

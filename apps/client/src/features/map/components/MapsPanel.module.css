@@ -1,0 +1,135 @@
+.panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #f8fafc;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.eyebrow {
+  color: #a78bfa;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+
+.primaryButton,
+.secondaryButton {
+  border: 1px solid rgba(167, 139, 250, 0.55);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6d28d9, #312e81);
+  color: #fff;
+  font-weight: 800;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.secondaryButton {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.currentCard {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 40%),
+    rgba(15, 15, 17, 0.92);
+}
+
+.thumbnail {
+  min-height: 78px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background-color: #111827;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: cover, 18px 18px, 18px 18px;
+  background-position: center;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  overflow: hidden;
+}
+
+.currentInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
+
+.currentInfo strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.currentInfo small,
+.muted {
+  color: #a1a1aa;
+}
+
+.liveBadge {
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #86efac;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+
+.previewBadge {
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.16);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  color: #ddd6fe;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+
+.helper {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 12px;
+}
+
+.error {
+  margin: 0;
+  color: #fecaca;
+}
+
+.actionStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

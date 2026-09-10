@@ -1,0 +1,195 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #f4efe6;
+}
+
+.emptyState,
+.hero,
+.card,
+.statusCard {
+  border: 1px solid rgba(139, 107, 63, 0.42);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(124, 58, 237, 0.14), transparent 38%),
+    linear-gradient(145deg, rgba(24, 24, 24, 0.98), rgba(10, 10, 10, 0.96));
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.26);
+}
+
+.emptyState {
+  padding: 16px;
+}
+
+.emptyState strong,
+.hero strong,
+.cardHeader strong,
+.statusCard strong {
+  display: block;
+  font-weight: 900;
+}
+
+.emptyState p,
+.hero p {
+  margin: 7px 0 0;
+  color: #b9b0a3;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.hero {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #f4c96f;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.switchButton,
+.toolButton,
+.primaryAction,
+.secondaryAction {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #f7f2e8;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.switchButton {
+  min-width: 92px;
+  padding: 10px 12px;
+}
+
+.switchButtonOn {
+  border-color: rgba(34, 197, 94, 0.68);
+  background:
+    linear-gradient(135deg, rgba(22, 101, 52, 0.92), rgba(21, 128, 61, 0.72));
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.18);
+}
+
+.card {
+  padding: 12px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cardHeader span,
+.statusCard span {
+  color: #a9a198;
+  font-size: 12px;
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.toolButton {
+  min-height: 74px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  text-align: left;
+}
+
+.toolButton small {
+  color: #aaa096;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.toolButton:hover:not(:disabled),
+.secondaryAction:hover:not(:disabled) {
+  border-color: rgba(168, 85, 247, 0.58);
+  background: rgba(168, 85, 247, 0.12);
+}
+
+.toolButtonActive {
+  border-color: rgba(168, 85, 247, 0.92);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.32), transparent 58%),
+    rgba(63, 35, 119, 0.55);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.24);
+}
+
+.toolButton:disabled,
+.primaryAction:disabled,
+.secondaryAction:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  color: #d8d0c5;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.field input[type="range"] {
+  accent-color: #8b5cf6;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 42px;
+  padding: 10px 12px;
+}
+
+.primaryAction {
+  border-color: rgba(168, 85, 247, 0.72);
+  background:
+    linear-gradient(135deg, rgba(88, 28, 135, 0.82), rgba(49, 46, 129, 0.78));
+}
+
+.primaryAction:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.statusCard {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.statusCard div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.statusCard strong {
+  color: #f9f4ea;
+  text-align: right;
+  font-size: 13px;
+}
