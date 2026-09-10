@@ -41,6 +41,7 @@ export interface JoinCampaignLivePayload {
 export interface CreateCharacterTokenPayload {
   campaignId: string;
   characterId: string;
+  authToken: string;
   x?: number;
   y?: number;
 }
@@ -251,7 +252,7 @@ export interface UseActionPayload {
   color?: string;
 }
 
-export interface ActionUsedPayload extends UseActionPayload {
+export interface ActionUsedPayload extends Omit<UseActionPayload, "authToken"> {
   usedAt: number;
   previewDurationMs?: number;
 }

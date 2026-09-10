@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:baseline": "tsx --test tests/baseline.test.mjs",
     "build": "tsc -p tsconfig.json",
     "migrate:assets": "tsx src/assets/migrateBase64Assets.ts"
   },

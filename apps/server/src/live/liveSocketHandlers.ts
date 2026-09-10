@@ -12,6 +12,7 @@ import { ensureCampaignGmAccess } from "../maps/mapService";
 import { getCampaignSystemDefinition } from "@shared/rules/systemRegistry";
 
 import type {
+  ActionUsedPayload,
   AddTokenPayload,
   AudioPlaybackSetPayload,
   AudioQueueClearPayload,
@@ -260,10 +261,17 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
   socket.on(
     "character:token:create",
     async (payload: CreateCharacterTokenPayload, callback) => {
-      const campaignId = payload.campaignId?.trim();
-      const characterId = payload.characterId?.trim();
+      const campaignId =
+        typeof payload?.campaignId === "string" ? payload.campaignId.trim() : "";
+      const characterId =
+        typeof payload?.characterId === "string" ? payload.characterId.trim() : "";
 
-      if (!campaignId || !characterId) {
+      if (
+        !campaignId ||
+        !characterId ||
+        typeof payload?.authToken !== "string" ||
+        !payload.authToken.trim()
+      ) {
         callback?.({
           ok: false,
           error: "Dados inválidos para criar token.",
@@ -272,6 +280,38 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
       }
 
       try {
+        const authPayload = verifyAuthToken(payload.authToken);
+        const member = await ensureCampaignAccess({
+          campaignId,
+          userId: authPayload.userId,
+        });
+        const character = await prisma.character.findFirst({
+          where: {
+            id: characterId,
+            campaignId,
+            archivedAt: null,
+          },
+          include: { permissions: true },
+        });
+
+        if (!character) {
+          throw new Error("Ficha não encontrada.");
+        }
+
+        const canControl =
+          member.role === "owner" ||
+          member.role === "gm" ||
+          character.ownerUserId === authPayload.userId ||
+          character.createdByUserId === authPayload.userId ||
+          character.permissions.some(
+            (permission) =>
+              permission.userId === authPayload.userId && permission.canControl,
+          );
+
+        if (!canControl) {
+          throw new Error("Voce nao controla esta ficha.");
+        }
+
         const result = await createTokenFromCharacter({
           campaignId,
           characterId,
@@ -774,10 +814,17 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
 
     io.to(room.code).emit("chat:message", message);
     io.to(room.code).emit("action:used", {
-      ...payload,
+      useId: payload.useId,
+      roomCode: payload.roomCode,
+      action: payload.action,
+      casterTokenId: payload.casterTokenId,
+      characterId: payload.characterId,
+      targeting: payload.targeting,
+      rolls: payload.rolls,
+      color: payload.color,
       usedAt: Date.now(),
       previewDurationMs: 3200,
-    });
+    } satisfies ActionUsedPayload);
 
     let roomStateChanged = false;
 

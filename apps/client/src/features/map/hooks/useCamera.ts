@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   screenDeltaToWorldDelta as screenDeltaToWorldDeltaProjected,
   screenToWorld,
@@ -100,13 +100,16 @@ export function useCamera(
     }));
   };
 
-  const setMode = (nextMode: "2d" | "2.5d") => {
-    setCamera((prev) => ({
-      ...prev,
-      pitch: nextMode === "2.5d" ? getPitchForZoom(prev.zoom) : 0,
-      yaw: nextMode === "2.5d" ? prev.yaw : 0,
-    }));
-  };
+  const setMode = useCallback((nextMode: "2d" | "2.5d") => {
+    setCamera((prev) => {
+      const pitch = nextMode === "2.5d" ? getPitchForZoom(prev.zoom) : 0;
+      const yaw = nextMode === "2.5d" ? prev.yaw : 0;
+
+      if (prev.pitch === pitch && prev.yaw === yaw) return prev;
+
+      return { ...prev, pitch, yaw };
+    });
+  }, []);
 
   const resetCamera = () => {
     setCamera({
