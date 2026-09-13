@@ -1,5 +1,6 @@
 import type { Server, Socket } from "socket.io";
 import { randomUUID } from "crypto";
+import { registerScene3DSocketHandlers } from "./scene3dSocketHandlers";
 
 import {
   persistAssetReference,
@@ -92,7 +93,15 @@ import {
   switchCampaignMap,
 } from "./liveRoomService";
 
+function tokenAudience(io: Server, room: RoomState, sender?: Socket) {
+  return { emit(event: string, data: unknown) {
+    if (room.mapSettings.layerConfig?.fogOfWar.enabled) emitRoomState(io, room);
+    else (sender ? sender.to(room.code) : io.to(room.code)).emit(event, data);
+  } };
+}
+
 export function registerLiveSocketHandlers(io: Server, socket: Socket) {
+  registerScene3DSocketHandlers(io, socket);
   console.log("Conectado:", socket.id);
 
   socket.on(
@@ -455,7 +464,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
 
     room.tokens[payload.token.id] = token;
 
-    io.to(room.code).emit("token:added", token);
+    tokenAudience(io, room).emit("token:added", token);
 
     try {
       await persistTokenAdd(room.code, token);
@@ -494,7 +503,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
     token.x = position.x;
     token.y = position.y;
 
-    socket.to(room.code).emit("token:moved", {
+    tokenAudience(io, room, socket).emit("token:moved", {
       tokenId: payload.tokenId,
       x: position.x,
       y: position.y,
@@ -532,7 +541,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
 
     token.image = tokenImage ?? undefined;
 
-    io.to(room.code).emit("token:updated", {
+    tokenAudience(io, room).emit("token:updated", {
       tokenId: payload.tokenId,
       patch: {
         image: token.image,
@@ -572,7 +581,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
         token.conditions = payload.conditions;
       }
 
-      io.to(room.code).emit("token:updated", {
+      tokenAudience(io, room).emit("token:updated", {
         tokenId: payload.tokenId,
         patch: {
           showHealthBar: token.showHealthBar,
@@ -666,7 +675,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
         token.y = position.y;
       }
 
-      io.to(room.code).emit("token:updated", {
+      tokenAudience(io, room).emit("token:updated", {
         tokenId: payload.tokenId,
         patch: {
           x: token.x,
@@ -715,7 +724,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
 
     delete room.tokens[payload.tokenId];
 
-    io.to(room.code).emit("token:deleted", {
+    tokenAudience(io, room).emit("token:deleted", {
       tokenId: payload.tokenId,
     });
 
@@ -1067,14 +1076,14 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
         const layerConfig = await persistAssetReferences(
           payload.settings.layerConfig,
         );
-        const settings = normalizeMapSettings({
+        let settings = normalizeMapSettings({
           ...payload.settings,
           backgroundImage: backgroundImage ?? undefined,
           layerConfig,
         });
 
         if (!isTemporaryLobby) {
-          await persistMapSettings(room.code, settings);
+          settings = await persistMapSettings(room.code, settings);
         }
 
         room.mapSettings = settings;

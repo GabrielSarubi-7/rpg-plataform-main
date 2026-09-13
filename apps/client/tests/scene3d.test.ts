@@ -40,16 +40,16 @@ test("background matches contain and centered letterboxing in both orientations"
   assert.deepEqual(fitContainedImage(20, 10, 100, 100), { width: 10, height: 10, x: 5, y: 0 });
   assert.deepEqual(fitContainedImage(10, 20, 200, 100), { width: 10, height: 5, x: 0, y: 7.5 });
 });
-test("unsupported layers block 3D without changing map data, for both fog modes", () => {
+test("legacy layers render in 3D without changing map data, painting remains in 2D", () => {
   const layer = normalizeMapLayerConfig();
   assert.deepEqual(getUnsupportedSceneLayers(layer), []);
   for (const mode of ["hidden_cells", "revealed_cells"]) {
     const fog = { ...layer, fogOfWar: { ...layer.fogOfWar, enabled: true, mode } };
-    assert.deepEqual(getUnsupportedSceneLayers(fog), ["Fog of War"]);
+    assert.deepEqual(getUnsupportedSceneLayers(fog), []);
   }
   const populated = { ...layer, terrainCells: { "0:0": {} }, walls: [{}], objects: [{}], images: [{}] };
   const before = JSON.stringify(populated);
-  assert.equal(getUnsupportedSceneLayers(populated, 1, true).length, 6);
+  assert.equal(getUnsupportedSceneLayers(populated, 1, true).length, 1);
   assert.equal(JSON.stringify(populated), before);
 });
 const tokens = {

@@ -2,6 +2,7 @@ import type {
   FogOfWarConfig,
   MapImage,
   MapLayerConfig,
+  MapLayerConfigV2,
   MapObject,
   MapSettings,
   TerrainCell,
@@ -10,6 +11,8 @@ import type {
   WallSegment,
 } from "../types/map";
 import { clamp } from "../utils/math";
+import { filterScene3DForPlayers, normalizeScene3DConfig } from "./scene3dRules";
+import { isFogAreaVisible } from "./fogVisibility";
 
 export const DEFAULT_FOG_OF_WAR: FogOfWarConfig = {
   enabled: false,
@@ -19,12 +22,13 @@ export const DEFAULT_FOG_OF_WAR: FogOfWarConfig = {
 };
 
 export const DEFAULT_MAP_LAYER_CONFIG: MapLayerConfig = {
-  version: 1,
+  version: 2,
   terrainCells: {},
   walls: [],
   objects: [],
   images: [],
   fogOfWar: DEFAULT_FOG_OF_WAR,
+  scene3d: normalizeScene3DConfig(),
 };
 
 export const DEFAULT_MAP_SETTINGS: MapSettings = {
@@ -99,7 +103,7 @@ export function getTerrainCellKey(x: number, y: number) {
   return `${x}:${y}`;
 }
 
-export function normalizeMapLayerConfig(value: unknown): MapLayerConfig {
+export function normalizeMapLayerConfig(value: unknown): MapLayerConfigV2 {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return cloneDefaultLayerConfig();
   }
@@ -110,6 +114,7 @@ export function normalizeMapLayerConfig(value: unknown): MapLayerConfig {
     objects?: unknown;
     images?: unknown;
     fogOfWar?: unknown;
+    scene3d?: unknown;
   };
   const terrainCells: Record<string, TerrainCell> = {};
 
@@ -128,7 +133,7 @@ export function normalizeMapLayerConfig(value: unknown): MapLayerConfig {
   }
 
   return {
-    version: 1,
+    version: 2,
     terrainCells,
     walls: Array.isArray(raw.walls)
       ? raw.walls
@@ -146,17 +151,19 @@ export function normalizeMapLayerConfig(value: unknown): MapLayerConfig {
           .filter((image): image is MapImage => Boolean(image))
       : [],
     fogOfWar: normalizeFogOfWarConfig(raw.fogOfWar),
+    scene3d: normalizeScene3DConfig(raw.scene3d),
   };
 }
 
-function cloneDefaultLayerConfig(): MapLayerConfig {
+function cloneDefaultLayerConfig(): MapLayerConfigV2 {
   return {
-    version: 1,
+    version: 2,
     terrainCells: {},
     walls: [],
     objects: [],
     images: [],
     fogOfWar: cloneDefaultFogOfWar(),
+    scene3d: normalizeScene3DConfig(),
   };
 }
 
@@ -353,12 +360,24 @@ export function filterMapSettingsForPlayers(settings: MapSettings): MapSettings 
   const size = getMapPixelSize(normalized);
   const layerConfig = normalizeMapLayerConfig(normalized.layerConfig);
 
+  const visible = (x: number, z: number, width?: number, depth?: number) => isFogAreaVisible(layerConfig.fogOfWar, x, z, width, depth);
+  const scene = filterScene3DForPlayers(normalizeScene3DConfig(layerConfig.scene3d));
+  scene.objects = scene.objects.filter(({ transform: t }) => {
+    // Object pivots are at their base, and rotations may move the full height sideways.
+    const radius = Math.hypot(t.scale.x, t.scale.y, t.scale.z);
+    return visible(t.position.x - radius, t.position.z - radius, radius * 2, radius * 2);
+  });
+
   return {
     ...normalized,
     layerConfig: {
       ...layerConfig,
+      scene3d: scene,
+      terrainCells: Object.fromEntries(Object.entries(layerConfig.terrainCells).filter(([, cell]) => visible(cell.x, cell.y, 1, 1))),
+      walls: layerConfig.walls.filter((wall) => visible(wall.x - 0.05, wall.y - 0.05, wall.orientation === "horizontal" ? 1.1 : 0.1, wall.orientation === "vertical" ? 1.1 : 0.1)),
+      objects: layerConfig.objects.filter((object) => visible(object.x, object.y, object.widthCells, object.heightCells)),
       images: layerConfig.images.filter((image) =>
-        isMapImageVisibleToPlayers(image, size.width, size.height),
+        isMapImageVisibleToPlayers(image, size.width, size.height) && visible(image.x / normalized.cellSize, image.y / normalized.cellSize, image.width / normalized.cellSize, image.height / normalized.cellSize),
       ),
     },
   };

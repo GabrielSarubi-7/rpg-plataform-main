@@ -5,7 +5,7 @@
     "dev": "vite --host 0.0.0.0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "build": "vite build",
-    "test:scene3d": "tsx --test tests/scene3d.test.ts"
+    "test:scene3d": "tsx --test tests/scene3d.test.ts tests/scene3d.phase23.test.ts"
   },
   "dependencies": {
     "@react-three/drei": "9.122.0",

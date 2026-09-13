@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { applySceneUpdate } from "@/features/scene3d/services/sceneSocket";
 
 import { socket } from "@/core/socket/socket";
 
@@ -46,11 +47,19 @@ export function useRoomSocketEvents() {
   const setAnnotations = useAnnotationStore((s) => s.setAnnotations);
 
   useEffect(() => {
+    socket.on("scene3d:updated", applySceneUpdate);
+    const viewingPrivateMap = () => {
+      const maps = useCampaignMapStore.getState();
+      const current = useMapStore.getState().mapId;
+      return Boolean(maps.canManage && current && maps.activeMapId && current !== maps.activeMapId);
+    };
     const handleRoomState = (room: RoomState) => {
+      const preservePrivateView = viewingPrivateMap() && useMapStore.getState().mapId !== room.mapSettings.mapId;
       setRoomState(room);
+      setActiveMapId(room.mapSettings.mapId ?? null);
+      if (preservePrivateView) return;
       setTokens(room.tokens);
       setMapSettings(room.mapSettings);
-      setActiveMapId(room.mapSettings.mapId ?? null);
       setAnnotations(room.annotations ?? {});
     };
 
@@ -59,18 +68,22 @@ export function useRoomSocketEvents() {
       x: number;
       y: number;
     }) => {
+      if (viewingPrivateMap()) return;
       moveTokenLocal(data.tokenId, data.x, data.y);
     };
 
     const handleTokenAdded = (token: TokenAddedPayload) => {
+      if (viewingPrivateMap()) return;
       addTokenLocal(token);
     };
 
     const handleTokenUpdated = (data: TokenUpdatedPayload) => {
+      if (viewingPrivateMap()) return;
       updateTokenLocal(data.tokenId, data.patch);
     };
 
     const handleTokenDeleted = (data: TokenDeletedPayload) => {
+      if (viewingPrivateMap()) return;
       if (data.tokenId) {
         removeTokenLocal(data.tokenId);
       }
@@ -114,6 +127,7 @@ export function useRoomSocketEvents() {
     socket.on("character:deleted", handleCharacterDeleted);
 
     return () => {
+      socket.off("scene3d:updated", applySceneUpdate);
       socket.off("room:state", handleRoomState);
       socket.off("token:added", handleTokenAdded);
       socket.off("token:moved", handleTokenMoved);

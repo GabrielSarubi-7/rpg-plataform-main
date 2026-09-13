@@ -167,14 +167,12 @@ try {
   await mode("3d");
   if (process.env.SCENE3D_SCREENSHOT) await page.screenshot({ path: process.env.SCENE3D_SCREENSHOT });
   await page.evaluate(() => window.fixture.fog(true));
-  await page.getByRole("status").filter({ hasText: "Fog of War" }).waitFor();
-  assert.equal(await page.locator("canvas").count(), 0, "fog must unmount 3D");
-  await page.getByRole("button", { name: "Voltar ao 2D" }).click();
-  assert.equal((await snapshot()).mode, "2d");
+  await waitScene();
+  assert.equal(await page.locator("canvas").count(), 1, "fog is supported in 3D");
   assert.deepEqual(errors, [], "no runtime errors during gameplay/switching");
   await page.evaluate(() => { window.fixture.fog(false); window.fixture.layers({ objects: [{ id: "unsupported-object", x: 1, y: 1 }] }); window.fixture.mode("3d"); });
-  await page.getByRole("status").filter({ hasText: "objetos de cenário" }).waitFor();
-  assert.equal(await page.locator("canvas").count(), 0, "unsupported objects must block the renderer");
+  await waitScene();
+  assert.equal(await page.locator("canvas").count(), 1, "legacy objects are supported");
   await page.evaluate(() => window.fixture.layers({}));
   await waitScene();
   await page.evaluate(() => { window.fixture.fog(false); window.fixture.background("/missing-scene-test-image.png"); window.fixture.mode("3d"); });
@@ -223,7 +221,7 @@ try {
   await page.evaluate(() => window.fixture.privateMap(false));
   socketFixture.room().annotations = { secret: { id: "secret", visibility: "gm", type: "text", text: "GM secret", x: 0, y: 0, color: "#fff", fontSize: 18 } };
   socketFixture.publish();
-  await page.getByRole("status").filter({ hasText: "anotações" }).waitFor();
+  await page.getByText("GM secret", { exact: true }).waitFor();
   assert.equal((await snapshot()).annotations.secret.text, "GM secret");
   assert.deepEqual(await peer.evaluate(() => window.fixture.snapshot().annotations), {}, "GM annotation never enters player state");
   await waitScene(peer);

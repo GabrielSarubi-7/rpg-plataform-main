@@ -24,9 +24,9 @@ socket.disconnect();
 const emissions: { event: string; payload: unknown }[] = [];
 const originalEmit = socket.emit.bind(socket);
 let networkAuthToken: string | undefined;
-socket.emit = ((event: string, payload: Record<string, unknown>) => {
+socket.emit = ((event: string, payload: Record<string, unknown>, ...args: unknown[]) => {
   emissions.push({ event, payload });
-  if (networkAuthToken) originalEmit(event, { ...payload, authToken: networkAuthToken });
+  if (networkAuthToken) originalEmit(event, { ...payload, authToken: networkAuthToken }, ...args);
   return socket;
 }) as typeof socket.emit;
 const background = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400"><path fill="#8b3030" d="M0 0H400V200H0z"/><path fill="#306b30" d="M400 0H800V200H400z"/><path fill="#30308b" d="M0 200H400V400H0z"/><path fill="#8b8b30" d="M400 200H800V400H400z"/></svg>');
@@ -50,6 +50,9 @@ Object.assign(window, { fixture: {
   sprite,
   portrait,
   originalBackground: background,
+  enableEditor: () => useAuthStore.setState({ token: networkAuthToken }),
+  map: () => useMapStore.getState(),
+  emit: (event: string, data: object) => new Promise((resolve) => originalEmit(event, { roomCode: campaign.id, mapId: useMapStore.getState().mapId, ...data, authToken: networkAuthToken }, resolve)),
   connect: async (url: string, role: "gm" | "player") => {
     useAuthStore.setState({ user: { id: role, name: role } as never });
     (socket.io as unknown as { uri: string }).uri = url;

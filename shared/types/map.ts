@@ -1,3 +1,5 @@
+import type { Scene3DConfig } from "./scene3d";
+
 export type TerrainType =
   | "stone"
   | "grass"
@@ -66,12 +68,18 @@ export interface FogOfWarConfig {
 }
 
 export interface MapLayerConfig {
-  version: 1;
+  version: 1 | 2;
   terrainCells: Record<string, TerrainCell>;
   walls: WallSegment[];
   objects: MapObject[];
   images: MapImage[];
   fogOfWar: FogOfWarConfig;
+  scene3d?: Scene3DConfig;
+}
+
+export interface MapLayerConfigV2 extends MapLayerConfig {
+  version: 2;
+  scene3d: Scene3DConfig;
 }
 
 export interface MapSettings {

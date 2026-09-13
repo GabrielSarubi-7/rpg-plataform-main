@@ -9,7 +9,7 @@ assetRoutes.post(
   "/assets",
   authMiddleware,
   express.raw({
-    type: ["image/*", "audio/*", "application/octet-stream"],
+    type: ["image/*", "audio/*", "model/gltf-binary", "application/octet-stream"],
     limit: process.env.ASSET_UPLOAD_LIMIT ?? "24mb",
   }),
   async (request, response) => {

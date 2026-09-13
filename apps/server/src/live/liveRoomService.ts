@@ -1,10 +1,12 @@
 import { randomUUID } from "crypto";
+import { isTokenVisibleInFog } from "@shared/rules/fogVisibility";
 
 import {
   persistAssetReference,
   persistAssetReferences,
 } from "../assets/assetService";
 import { prisma } from "../db/prisma";
+import { withMapWriteLock } from "../maps/mapWriteLock";
 
 import type { RoomState, Player } from "@shared/types/multiplayer";
 
@@ -645,24 +647,31 @@ export async function persistMapSettings(
   const activeMapId = await getCampaignRoomActiveMapId(roomCode);
 
   if (!activeMapId) {
-    return;
+    throw new Error("Nenhum mapa ativo.");
   }
 
-  const backgroundImage = await persistAssetReference(settings.backgroundImage);
-  const layerConfig = await persistAssetReferences(settings.layerConfig);
+  if (settings.mapId && settings.mapId !== activeMapId) throw new Error("O mapa ativo mudou. Recarregue antes de salvar.");
+  return withMapWriteLock(activeMapId, async () => {
+    const stored = await prisma.map.findUnique({ where: { id: activeMapId } });
+    if (!stored) throw new Error("Mapa não encontrado.");
+    const backgroundImage = await persistAssetReference(settings.backgroundImage);
+    const layerConfig = {
+      ...normalizeMapLayerConfig(await persistAssetReferences(settings.layerConfig)),
+      scene3d: normalizeMapLayerConfig(stored.layerConfigJson).scene3d,
+    };
 
-  await prisma.map.update({
-    where: {
-      id: activeMapId,
-    },
-    data: {
-      name: settings.pageName,
-      width: settings.widthCells,
-      height: settings.heightCells,
-      cellSize: settings.cellSize,
-      backgroundImage: backgroundImage ?? null,
-      layerConfigJson: toPrismaJson(normalizeMapLayerConfig(layerConfig)),
-    },
+    await prisma.map.update({
+      where: { id: activeMapId },
+      data: {
+        name: settings.pageName,
+        width: settings.widthCells,
+        height: settings.heightCells,
+        cellSize: settings.cellSize,
+        backgroundImage: backgroundImage ?? null,
+        layerConfigJson: toPrismaJson(layerConfig),
+      },
+    });
+    return normalizeMapSettings({ ...settings, mapId: activeMapId, layerConfig });
   });
 }
 
@@ -674,6 +683,7 @@ export function getRoomStateForPlayer(room: RoomState, isGm: boolean): RoomState
   return {
     ...room,
     mapSettings: filterMapSettingsForPlayers(room.mapSettings),
+    tokens: Object.fromEntries(Object.entries(room.tokens).filter(([, token]) => isTokenVisibleInFog(token, room.mapSettings))),
     annotations: filterAnnotationsForPlayer(room.annotations),
   };
 }

@@ -4,6 +4,9 @@ import type { CampaignSheetTemplate } from "@shared/types/campaignSettings";
 import type { PixelPoint } from "./utils/coordinates3d";
 
 export interface Scene3DProps {
+  isGm?: boolean;
+  campaignId?: string;
+  authToken?: string | null;
   mapWidth: number;
   mapHeight: number;
   cellSize: number;

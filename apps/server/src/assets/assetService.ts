@@ -1,10 +1,12 @@
 import { createHash } from "crypto";
 import fs from "fs/promises";
 import path from "path";
+import { validateGlb } from "@shared/rules/glbRules";
 
 const DATA_URL_PATTERN = /^data:((?:image|audio)\/[a-zA-Z0-9.+-]+);base64,(.*)$/s;
 
 const MIME_EXTENSIONS: Record<string, string> = {
+  "model/gltf-binary": "glb",
   "image/png": "png",
   "image/jpeg": "jpg",
   "image/jpg": "jpg",
@@ -46,7 +48,13 @@ export async function saveImageAsset(input: {
   mimeType: string;
   originalName?: string;
 }): Promise<PersistedAsset> {
-  const mimeType = normalizeMimeType(input.mimeType);
+  let mimeType = normalizeMimeType(input.mimeType);
+  const glbName = input.originalName?.toLowerCase().endsWith(".glb");
+  if (glbName || mimeType === "model/gltf-binary") {
+    if (!glbName || !["model/gltf-binary", "application/octet-stream"].includes(mimeType)) throw new Error("Extensão/MIME GLB inválido.");
+    validateGlb(input.buffer);
+    mimeType = "model/gltf-binary";
+  }
 
   if (!isSupportedAssetMimeType(mimeType)) {
     throw new Error("Tipo de arquivo nao suportado.");

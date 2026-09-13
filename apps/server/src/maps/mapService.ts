@@ -9,6 +9,7 @@ import {
   persistAssetReferences,
 } from "../assets/assetService";
 import { prisma } from "../db/prisma";
+import { withMapWriteLock } from "./mapWriteLock";
 import {
   DEFAULT_MAP_SETTINGS,
   filterMapSettingsForPlayers,
@@ -235,49 +236,51 @@ export async function updateCampaignMap(input: {
     userId: input.userId,
   });
 
-  const map = await prisma.map.findFirst({
-    where: {
-      id: input.mapId,
-      campaignId: input.campaignId,
-      isArchived: false,
-      deletedAt: null,
-    },
-  });
+  return withMapWriteLock(input.mapId, async () => {
+    const map = await prisma.map.findFirst({
+      where: {
+        id: input.mapId,
+        campaignId: input.campaignId,
+        isArchived: false,
+        deletedAt: null,
+      },
+    });
 
-  if (!map) {
-    throw new Error("Mapa não encontrado.");
-  }
+    if (!map) {
+      throw new Error("Mapa não encontrado.");
+    }
 
-  const nextName = input.name?.trim();
+    const nextName = input.name?.trim();
 
-  if (nextName !== undefined && nextName.length < 2) {
-    throw new Error("Nome do mapa precisa ter pelo menos 2 caracteres.");
-  }
+    if (nextName !== undefined && nextName.length < 2) {
+      throw new Error("Nome do mapa precisa ter pelo menos 2 caracteres.");
+    }
 
-  const backgroundImage =
-    input.backgroundImage === undefined
-      ? undefined
-      : await persistAssetReference(input.backgroundImage);
-  const layerConfig =
-    input.layerConfig === undefined
-      ? undefined
-      : await persistAssetReferences(input.layerConfig);
+    const backgroundImage =
+      input.backgroundImage === undefined
+        ? undefined
+        : await persistAssetReference(input.backgroundImage);
+    const layerConfig =
+      input.layerConfig === undefined
+        ? undefined
+        : await persistAssetReferences(input.layerConfig);
 
-  return prisma.map.update({
-    where: {
-      id: map.id,
-    },
-    data: {
-      name: nextName ?? undefined,
-      width: input.width ?? undefined,
-      height: input.height ?? undefined,
-      cellSize: input.cellSize ?? undefined,
-      backgroundImage,
-      layerConfigJson:
-        layerConfig === undefined
-          ? undefined
-          : toPrismaJson(normalizeMapLayerConfig(layerConfig)),
-    },
+    return prisma.map.update({
+      where: {
+        id: map.id,
+      },
+      data: {
+        name: nextName ?? undefined,
+        width: input.width ?? undefined,
+        height: input.height ?? undefined,
+        cellSize: input.cellSize ?? undefined,
+        backgroundImage,
+        layerConfigJson:
+          layerConfig === undefined
+            ? undefined
+            : toPrismaJson({ ...normalizeMapLayerConfig(layerConfig), scene3d: normalizeMapLayerConfig(map.layerConfigJson).scene3d }),
+      },
+    });
   });
 }
 

@@ -1,5 +1,5 @@
 import type { FogOfWarConfig, MapLayerConfig } from "@shared/types/map";
-import { DEFAULT_FOG_OF_WAR, getTerrainCellKey } from "@shared/rules/mapRules";
+import { DEFAULT_FOG_OF_WAR, getTerrainCellKey, normalizeMapLayerConfig } from "@shared/rules/mapRules";
 
 export function getFogBrushCells(input: {
   centerX: number;
@@ -71,11 +71,7 @@ export function withFogOfWar(
   const baseFog = layerConfig?.fogOfWar ?? DEFAULT_FOG_OF_WAR;
 
   return {
-    version: 1,
-    terrainCells: layerConfig?.terrainCells ?? {},
-    walls: layerConfig?.walls ?? [],
-    objects: layerConfig?.objects ?? [],
-    images: layerConfig?.images ?? [],
+    ...normalizeMapLayerConfig(layerConfig),
     fogOfWar: {
       ...baseFog,
       ...fogOfWar,

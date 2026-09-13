@@ -993,6 +993,9 @@ export default function MapCanvas() {
   if (cameraMode === "3d") {
     return <>
       <Scene3DGate
+        isGm={isGm}
+        campaignId={activeCampaign?.id}
+        authToken={authToken}
         key={currentMapId ?? "temporary-map"}
         mapWidth={width}
         mapHeight={height}
