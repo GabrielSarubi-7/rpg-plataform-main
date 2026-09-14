@@ -66,6 +66,7 @@ export default function ModelAsset3D({ url }: { url?: string }) {
     entry.promise.then((root) => {
       if (!active) return;
       instance = clone(root);
+      instance.traverse((object) => { if (object instanceof Mesh) { object.castShadow = true; object.receiveShadow = true; } });
       const box = new Box3().setFromObject(instance), size = box.getSize(new Vector3()), center = box.getCenter(new Vector3());
       if (![...size.toArray(), ...center.toArray()].every(Number.isFinite)) throw new Error("Geometria inválida.");
       const scale = 1 / Math.max(size.x, size.y, size.z, 0.001);

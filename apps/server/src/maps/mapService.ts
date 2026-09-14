@@ -1,3 +1,4 @@
+import { tokenPerceptionFromDb } from "@shared/rules/sceneEnvironmentRules";
 import {
   ensureCampaignAccess,
   ensureCampaignGmAccess as ensureCampaignGmAccessBase,
@@ -75,7 +76,7 @@ function mapDbTokenToClientToken(token: {
   elevation: number;
   standMode: string;
   barsJson: unknown;
-  statusJson: unknown;
+  statusJson: unknown; visionJson?: unknown; lightJson?: unknown; visibility?: unknown; isHidden?: unknown;
 }): Token {
   const bars = normalizeTokenBars(token.barsJson);
   const status = normalizeTokenStatus(token.statusJson);
@@ -93,6 +94,7 @@ function mapDbTokenToClientToken(token: {
     conditions: status.conditions,
     elevation: token.elevation,
     standMode: normalizeTokenStandMode(token.standMode),
+    ...tokenPerceptionFromDb(token),
   };
 }
 

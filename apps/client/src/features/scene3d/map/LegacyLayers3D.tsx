@@ -30,7 +30,7 @@ export function Instances({ items, shape = "box", name, opacity = 1 }: { items: 
     mesh.computeBoundingSphere(); invalidate();
   }, [items, shape, invalidate]);
   if (!items.length) return null;
-  return <instancedMesh key={items.length} ref={ref} args={[undefined, undefined, items.length]} name={name}>
+  return <instancedMesh key={items.length} ref={ref} args={[undefined, undefined, items.length]} name={name} castShadow={shape !== "plane"} receiveShadow={shape !== "plane"}>
     {shape === "box" ? <boxGeometry /> : shape === "cone" ? <coneGeometry args={[0.5, 1, 8]} /> : shape === "sphere" ? <icosahedronGeometry args={[0.5, 1]} /> : shape === "plane" ? <planeGeometry /> : <cylinderGeometry args={[0.5, 0.5, 1, 10]} />}
     {shape === "plane" ? <meshBasicMaterial transparent={opacity < 1} opacity={opacity} /> : <meshStandardMaterial roughness={0.95} transparent={opacity < 1} opacity={opacity} />}
   </instancedMesh>;

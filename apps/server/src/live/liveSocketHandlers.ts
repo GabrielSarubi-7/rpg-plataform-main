@@ -1,6 +1,9 @@
 import type { Server, Socket } from "socket.io";
 import { randomUUID } from "crypto";
 import { registerScene3DSocketHandlers } from "./scene3dSocketHandlers";
+import { registerSceneWorldSocketHandlers } from "./sceneWorldSocketHandlers";
+import { forgetViewer, publishPlayerViews, refreshViewer, relatedAudience, safeRelatedPayload, socketUsers } from "./playerVisibility";
+import { movementBlocked } from "@shared/rules/visibilityRules";
 
 import {
   persistAssetReference,
@@ -95,12 +98,12 @@ import {
 
 function tokenAudience(io: Server, room: RoomState, sender?: Socket) {
   return { emit(event: string, data: unknown) {
-    if (room.mapSettings.layerConfig?.fogOfWar.enabled) emitRoomState(io, room);
-    else (sender ? sender.to(room.code) : io.to(room.code)).emit(event, data);
+    emitRoomState(io, room);
   } };
 }
 
 export function registerLiveSocketHandlers(io: Server, socket: Socket) {
+  registerSceneWorldSocketHandlers(io, socket);
   registerScene3DSocketHandlers(io, socket);
   console.log("Conectado:", socket.id);
 
@@ -134,16 +137,18 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
         };
 
         addOrUpdatePlayer(room, player);
+        socketUsers.set(socket.id, authPayload.userId);
+        await refreshViewer(room, player);
 
         socket.join(campaignId);
 
         callback?.({
           ok: true,
-          room: getRoomStateForPlayer(room, isGm),
+          room: getRoomStateForPlayer(room, isGm, socket.id),
           playerId: socket.id,
         });
 
-        socket.emit("chat:history", chatMessages[campaignId] ?? []);
+        socket.emit("chat:history", (chatMessages[campaignId] ?? []).filter((message) => safeRelatedPayload(room, socket.id, message)));
         emitRoomState(io, room);
 
         console.log(`${playerName} entrou na campanha ${campaignId}`);
@@ -232,7 +237,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
           userId: authPayload.userId,
         });
 
-        socket.to(room.code).emit("character:updated", payload.character);
+        relatedAudience(io, room).emit("character:updated", payload.character);
       } catch (error) {
         console.error("Erro ao sincronizar ficha atualizada:", error);
       }
@@ -258,7 +263,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
           userId: authPayload.userId,
         });
 
-        socket.to(room.code).emit("character:deleted", {
+        relatedAudience(io, room).emit("character:deleted", {
           characterId,
         });
       } catch (error) {
@@ -432,6 +437,9 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
 
       canResizeToken =
         context.isGm && isSocketGmInTemporaryRoom(room, socket.id);
+      // Players create their character token through character:token:create.
+      // Arbitrary replacement would bypass server-owned visibility/vision fields.
+      if (!canResizeToken) throw new Error("Apenas o GM pode adicionar tokens arbitrários.");
     } catch (error) {
       console.error("Token add negado:", error);
       return;
@@ -500,6 +508,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
       dimensions.height,
     );
 
+    if (movementBlocked(room.mapSettings, token, position.x, position.y)) { socket.emit("room:state", getRoomStateForSocket(room, socket.id)); return; }
     token.x = position.x;
     token.y = position.y;
 
@@ -821,8 +830,8 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
       text: textParts.join(" "),
     });
 
-    io.to(room.code).emit("chat:message", message);
-    io.to(room.code).emit("action:used", {
+    relatedAudience(io, room).emit("chat:message", message);
+    relatedAudience(io, room).emit("action:used", {
       useId: payload.useId,
       roomCode: payload.roomCode,
       action: payload.action,
@@ -972,7 +981,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
       text,
     });
 
-    io.to(room.code).emit("chat:message", message);
+    relatedAudience(io, room).emit("chat:message", message);
   });
 
   socket.on(
@@ -1015,7 +1024,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
         socket.emit("chat:message", message);
       } else {
         chatMessages[room.code].push(message);
-        io.to(room.code).emit("chat:message", message);
+        relatedAudience(io, room).emit("chat:message", message);
       }
       callback?.({
         ok: true,
@@ -1564,6 +1573,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
   });
 
   socket.on("disconnect", () => {
+    forgetViewer(socket.id);
     console.log("Desconectado:", socket.id);
 
     const result = removeSocketFromRooms(socket.id);
@@ -1579,12 +1589,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
 }
 
 function emitRoomState(io: Server, room: RoomState) {
-  for (const player of room.players) {
-    io.to(player.id).emit(
-      "room:state",
-      getRoomStateForPlayer(room, Boolean(player.isGm)),
-    );
-  }
+  void publishPlayerViews(io, room);
 }
 
 function getRoomStateForSocket(room: RoomState, socketId: string) {
@@ -1592,7 +1597,7 @@ function getRoomStateForSocket(room: RoomState, socketId: string) {
     (currentPlayer) => currentPlayer.id === socketId,
   );
 
-  return getRoomStateForPlayer(room, Boolean(player?.isGm));
+  return getRoomStateForPlayer(room, Boolean(player?.isGm), socketId);
 }
 
 async function ensureCanManageAnnotations(
@@ -1725,7 +1730,7 @@ function emitActionDiceMessage(input: {
     }
 
     chatMessages[input.roomCode].push(message);
-    input.io.to(input.roomCode).emit("chat:message", message);
+    const audienceRoom = getRoom(input.roomCode); if (audienceRoom) relatedAudience(input.io, audienceRoom).emit("chat:message", message);
     return result;
   } catch {
     const message = createChatMessage({
@@ -1735,7 +1740,7 @@ function emitActionDiceMessage(input: {
       text: `Não foi possível rolar ${input.label}: expressão inválida.`,
     });
 
-    input.io.to(input.roomCode).emit("chat:message", message);
+    const audienceRoom = getRoom(input.roomCode); if (audienceRoom) relatedAudience(input.io, audienceRoom).emit("chat:message", message);
     return null;
   }
 }
@@ -1873,7 +1878,7 @@ async function resolveAutomaticSavingThrows(input: {
     text: summaryParts.join(" "),
   });
 
-  input.io.to(input.roomCode).emit("chat:message", summary);
+  const audienceRoom = getRoom(input.roomCode); if (audienceRoom) relatedAudience(input.io, audienceRoom).emit("chat:message", summary);
 }
 
 function getCharacterSavingThrowBonus(dataJson: unknown, ability: string) {
@@ -2030,7 +2035,7 @@ async function ensureCanManageAudioQueue(
   });
 }
 
-async function ensureCanControlToken(
+export async function ensureCanControlToken(
   room: NonNullable<ReturnType<typeof getRoom>>,
   token: Token,
   authToken: string | undefined,

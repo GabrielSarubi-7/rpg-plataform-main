@@ -1,4 +1,5 @@
 import type { Scene3DConfig, SceneObject3DConfig, Transform3D, Vec3 } from "../types/scene3d";
+import { normalizeBookmark, normalizeDoor, normalizeEntities, normalizeEnvironment, normalizeFloor, normalizeLight } from "./sceneEnvironmentRules";
 
 export const MAX_SCENE_OBJECTS = 2000;
 export const MODEL_ASSET_PATH = /^\/assets\/[a-f0-9]{64}\.glb$/;
@@ -27,8 +28,13 @@ export function normalizeSceneObject3D(value: unknown, width = 500, depth = 500)
   const primitive = o.primitive === "sphere" || o.primitive === "cylinder" || o.primitive === "plane" ? o.primitive : "box";
   return {
     id: o.id, name: typeof o.name === "string" ? o.name.trim().slice(0, 100) || "Objeto" : "Objeto",
-    kind: o.kind === "model" ? "model" : "primitive", primitive,
-    assetUrl: typeof o.assetUrl === "string" && MODEL_ASSET_PATH.test(o.assetUrl) ? o.assetUrl : undefined,
+    kind: o.kind === "model" || o.kind === "door" ? o.kind : "primitive", primitive,
+    ...(isSceneObjectId(o.floorId) ? { floorId: o.floorId } : {}),
+    blocksMovement: o.blocksMovement === true || (o.kind === "door" && o.blocksMovement !== false),
+    blocksVision: o.blocksVision === true || (o.kind === "door" && o.blocksVision !== false),
+    blocksLight: o.blocksLight === true || (o.kind === "door" && o.blocksLight !== false),
+    ...(o.kind === "door" ? { door: normalizeDoor(o.door) } : {}),
+    ...(typeof o.assetUrl === "string" && MODEL_ASSET_PATH.test(o.assetUrl) ? { assetUrl: o.assetUrl } : {}),
     color: typeof o.color === "string" && /^#[0-9a-f]{6}$/i.test(o.color) ? o.color : "#9c8669",
     transform: normalizeTransform3D(o.transform, width, depth),
     // Invalid or missing visibility fails closed, never accidentally public.
@@ -48,6 +54,10 @@ export function normalizeScene3DConfig(value?: unknown, width = 500, depth = 500
     revision: Math.floor(finiteNumber(raw.revision, 0, 0, Number.MAX_SAFE_INTEGER)),
     world: { unitsPerCell: 1, distancePerCell: 5, distanceUnit: "ft" },
     objects,
+    environment: normalizeEnvironment(raw.environment),
+    lights: normalizeEntities(raw.lights, normalizeLight, 32),
+    floors: normalizeEntities(raw.floors, normalizeFloor, 16),
+    bookmarks: normalizeEntities(raw.bookmarks, normalizeBookmark, 32),
     settings: {
       gridVisible: settings.gridVisible !== false,
       snapEnabled: settings.snapEnabled !== false,
@@ -56,5 +66,5 @@ export function normalizeScene3DConfig(value?: unknown, width = 500, depth = 500
   };
 }
 export function filterScene3DForPlayers(scene: Scene3DConfig) {
-  return { ...scene, objects: scene.objects.filter((object) => object.visibility === "public") };
+  return { ...scene, objects: scene.objects.filter((object) => object.visibility === "public"), lights: scene.lights.filter((light) => light.visibility === "public"), floors: scene.floors.filter((floor) => floor.visible), bookmarks: [] };
 }

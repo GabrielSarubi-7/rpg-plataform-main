@@ -33,6 +33,8 @@ export async function startSceneSocketFixture() {
     return ["gm", "player"].includes(userId) ? { role: userId, userId, campaignId } : null;
   });
   stub(prisma.character, "findFirst", async ({ where }) => where.id === character?.id ? character : null);
+  stub(prisma.character, "findMany", async ({ where }) => character?.campaignId === where.campaignId && where.OR.some((condition) => (condition.ownerUserId && condition.ownerUserId === character.ownerUserId) || (condition.createdByUserId && condition.createdByUserId === character.createdByUserId) || character.permissions?.some((p) => p.canControl && p.userId === condition.permissions?.some?.userId)) ? [{ id: character.id }] : []);
+  stub(prisma.mapToken, "findMany", async ({ where }) => structuredClone(Object.values(persisted).filter((token) => token.mapId === where.mapId && !token.deletedAt)));
   stub(prisma.campaign, "findUnique", async () => ({ id: campaignId }));
   stub(prisma.campaignSession, "findFirst", async () => ({ activeMapId: "map-a" }));
   stub(prisma.map, "findFirst", async ({ where }) => where.campaignId && where.campaignId !== campaignId ? null : structuredClone(maps[where.id ?? "map-a"] ?? null));
@@ -58,9 +60,10 @@ export async function startSceneSocketFixture() {
     socket.on("fixture:join", async (data, ack) => {
       assert.ok(["gm", "player"].includes(data.role));
       if (!rooms[campaignId]) {
-        maps['map-a'] = { id: "map-a", campaignId, name: "Fixture", width: data.mapSettings.widthCells, height: data.mapSettings.heightCells, cellSize: data.mapSettings.cellSize, backgroundImage: null, layerConfigJson: structuredClone(data.mapSettings.layerConfig) };
+        maps['map-a'] = { id: "map-a", campaignId, name: "Fixture", width: data.mapSettings.widthCells, height: data.mapSettings.heightCells, cellSize: data.mapSettings.cellSize, backgroundImage: data.mapSettings.backgroundImage ?? null, layerConfigJson: structuredClone(data.mapSettings.layerConfig) };
         maps['map-private'] = { ...structuredClone(maps['map-a']), id: 'map-private' };
         character = data.character;
+        for (const token of Object.values(data.tokens)) persisted[token.id] = { mapId: 'map-a', sizeX: token.widthCells ?? 1, sizeY: token.heightCells ?? 1, imageUrl: token.image ?? null, visibility: 'public', elevation: 0, rotation: 0, ...structuredClone(token), visionJson: token.vision, lightJson: token.light };
         rooms[campaignId] = {
           code: campaignId, players: [], tokens: data.tokens, mapSettings: data.mapSettings,
           turnState: { active: false, entries: [], currentIndex: 0, round: 1 },
@@ -76,10 +79,11 @@ export async function startSceneSocketFixture() {
     url: `http://127.0.0.1:${http.address().port}`,
     persisted,
     maps,
+    async reload() { const { reloadCampaignRoom } = await import("../src/live/liveRoomService.ts"); return reloadCampaignRoom(campaignId); },
     room: () => rooms[campaignId],
-    publish() {
-      const room = rooms[campaignId];
-      for (const player of room.players) io.to(player.id).emit("room:state", getRoomStateForPlayer(room, player.isGm));
+    async publish() {
+      const { publishPlayerViews } = await import('../src/live/playerVisibility.ts');
+      await publishPlayerViews(io, rooms[campaignId]);
     },
     async close() {
       await new Promise((resolve) => io.close(resolve));

@@ -4,13 +4,15 @@ import { ensureCampaignGmAccess } from "../campaigns/campaignAccess";
 import { prisma } from "../db/prisma";
 import { withMapWriteLock } from "../maps/mapWriteLock";
 import { getRoom } from "./liveRoomService";
+import { publishPlayerViews } from "./playerVisibility";
+import { normalizeBookmark, normalizeEntities, normalizeEnvironment, normalizeFloor, normalizeLight } from "@shared/rules/sceneEnvironmentRules";
 import { filterMapSettingsForPlayers, normalizeMapLayerConfig } from "@shared/rules/mapRules";
 import { isSceneObjectId, MAX_SCENE_OBJECTS, normalizeScene3DConfig, normalizeSceneObject3D } from "@shared/rules/scene3dRules";
 import type { SceneMutationAck, SceneMutationPayload } from "@shared/types/scene3d";
 
 export function registerScene3DSocketHandlers(io: Server, socket: Socket) {
-  for (const operation of ["upsert", "remove", "settings", "sync"] as const) {
-    const event = operation === "settings" ? "scene3d:settings:update" : operation === "sync" ? "scene3d:sync" : `scene3d:object:${operation}`;
+  for (const operation of ["upsert", "remove", "settings", "sync", "environment", "light", "floor", "bookmark", "light:remove", "floor:remove", "bookmark:remove"] as const) {
+    const event = operation === "settings" ? "scene3d:settings:update" : operation === "sync" ? "scene3d:sync" : ["upsert", "remove"].includes(operation) ? `scene3d:object:${operation}` : `scene3d:${operation}`;
     socket.on(event, async (payload: SceneMutationPayload, callback?: (ack: SceneMutationAck) => void) => {
       try {
         if (!payload?.authToken || !payload.mapId || !payload.roomCode) throw new Error("Autenticação necessária.");
@@ -35,6 +37,19 @@ export function registerScene3DSocketHandlers(io: Server, socket: Socket) {
             next.objects = next.objects.filter((item) => item.id !== payload.objectId);
           } else if (operation === "settings") {
             next.settings = normalizeScene3DConfig({ settings: { ...next.settings, ...payload.settings } }).settings;
+          } else if (operation === "environment") {
+            next.environment = normalizeEnvironment(payload.environment);
+          } else if (["light", "floor", "bookmark"].includes(operation)) {
+            const field = operation === "light" ? "lights" : operation === "floor" ? "floors" : "bookmarks";
+            const entity = operation === "light" ? normalizeLight(payload.light) : operation === "floor" ? normalizeFloor(payload.floor) : normalizeBookmark(payload.bookmark);
+            if (!entity) throw new Error("Configuração inválida.");
+            const current = next[field] as { id: string }[];
+            if (!current.some((v) => v.id === entity.id) && current.length >= (field === "floors" ? 16 : 32)) throw new Error("Limite atingido.");
+            (next as any)[field] = [...current.filter((v) => v.id !== entity.id), entity];
+          } else if (operation.endsWith(":remove")) {
+            const field = operation.startsWith("light") ? "lights" : operation.startsWith("floor") ? "floors" : "bookmarks";
+            (next as any)[field] = next[field].filter((v) => v.id !== payload.entityId);
+            if (field === "floors") next.objects = next.objects.map((o) => o.floorId === payload.entityId ? { ...o, floorId: undefined } : o);
           }
           if (operation !== "sync" && JSON.stringify(next) !== before) {
             next.revision++;
@@ -44,10 +59,7 @@ export function registerScene3DSocketHandlers(io: Server, socket: Socket) {
           const room = getRoom(payload.roomCode);
           if (room?.mapSettings.mapId === map.id) {
             room.mapSettings.layerConfig = { ...normalizeMapLayerConfig(room.mapSettings.layerConfig), scene3d: next };
-            for (const player of room.players) {
-              const view = player.isGm ? room.mapSettings : filterMapSettingsForPlayers(room.mapSettings);
-              io.to(player.id).emit("scene3d:updated", { mapId: map.id, scene: view.layerConfig?.scene3d });
-            }
+            await publishPlayerViews(io, room, true);
           }
           return next;
         });

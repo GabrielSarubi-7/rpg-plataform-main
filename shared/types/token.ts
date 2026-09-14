@@ -1,4 +1,5 @@
 import type { TokenConditionId } from "./tokenStatus";
+import type { TokenLightConfig, TokenVisionConfig } from "./sceneEnvironment";
 
 export type TokenStandMode = "auto" | "flat" | "billboard";
 
@@ -16,4 +17,8 @@ export interface Token {
   conditions?: TokenConditionId[];
   elevation?: number;
   standMode?: TokenStandMode;
+  visibility?: "public" | "gm_only" | "hidden" | "owner_only";
+  isHidden?: boolean;
+  vision?: TokenVisionConfig;
+  light?: TokenLightConfig;
 }

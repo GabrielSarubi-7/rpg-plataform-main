@@ -355,13 +355,16 @@ export function isMapImageVisibleToPlayers(
   );
 }
 
-export function filterMapSettingsForPlayers(settings: MapSettings): MapSettings {
+export function filterMapSettingsForPlayers(settings: MapSettings, authoritativeVisibility = false): MapSettings {
   const normalized = normalizeMapSettings(settings);
   const size = getMapPixelSize(normalized);
   const layerConfig = normalizeMapLayerConfig(normalized.layerConfig);
 
   const visible = (x: number, z: number, width?: number, depth?: number) => isFogAreaVisible(layerConfig.fogOfWar, x, z, width, depth);
   const scene = filterScene3DForPlayers(normalizeScene3DConfig(layerConfig.scene3d));
+  if (scene.environment.visionEnabled && !authoritativeVisibility) {
+    return { ...normalized, backgroundImage: "", layerConfig: { ...layerConfig, terrainCells: {}, walls: [], objects: [], images: [], scene3d: { ...scene, objects: [], lights: [], floors: [], bookmarks: [] }, fogOfWar: { enabled: true, opacity: 1, mode: "revealed_cells", cells: {} } } };
+  }
   scene.objects = scene.objects.filter(({ transform: t }) => {
     // Object pivots are at their base, and rotations may move the full height sideways.
     const radius = Math.hypot(t.scale.x, t.scale.y, t.scale.z);

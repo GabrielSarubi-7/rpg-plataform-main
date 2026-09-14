@@ -6,12 +6,17 @@ export type ScenePrimitive = "box" | "sphere" | "cylinder" | "plane";
 export interface SceneObject3DConfig {
   id: string;
   name: string;
-  kind: "primitive" | "model";
+  kind: "primitive" | "model" | "door";
   primitive: ScenePrimitive;
   assetUrl?: string;
   color: string;
   transform: Transform3D;
   visibility: SceneVisibility;
+  floorId?: string;
+  blocksMovement: boolean;
+  blocksVision: boolean;
+  blocksLight: boolean;
+  door?: DoorConfig;
 }
 export interface Scene3DConfig {
   enabled: boolean;
@@ -19,6 +24,10 @@ export interface Scene3DConfig {
   world: { unitsPerCell: 1; distancePerCell: 5; distanceUnit: "ft" };
   objects: SceneObject3DConfig[];
   settings: { gridVisible: boolean; snapEnabled: boolean; snapSize: number };
+  environment: SceneEnvironmentConfig;
+  lights: SceneLightConfig[];
+  floors: SceneFloorConfig[];
+  bookmarks: CameraBookmark[];
 }
 export interface SceneMutationPayload {
   roomCode: string;
@@ -27,6 +36,12 @@ export interface SceneMutationPayload {
   object?: SceneObject3DConfig;
   objectId?: string;
   settings?: Scene3DConfig["settings"];
+  environment?: unknown;
+  light?: unknown;
+  floor?: unknown;
+  bookmark?: unknown;
+  entityId?: string;
 }
 export type SceneMutationAck = { ok: true; mapId: string; scene: Scene3DConfig } | { ok: false; error: string };
 export interface SceneUpdatedPayload { mapId: string; scene: Scene3DConfig }
+import type { CameraBookmark, DoorConfig, SceneEnvironmentConfig, SceneFloorConfig, SceneLightConfig } from "./sceneEnvironment";

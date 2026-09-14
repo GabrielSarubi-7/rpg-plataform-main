@@ -19,9 +19,9 @@ export default function GroundPlane3D({ width, depth, image, layer }: { width: n
     shader.fragmentShader = "uniform sampler2D groundCutout; varying vec2 groundXZ;\n" + shader.fragmentShader.replace("#include <clipping_planes_fragment>", `#include <clipping_planes_fragment>\nif(texture2D(groundCutout, groundXZ / vec2(${width.toFixed(1)}, ${depth.toFixed(1)})).r > 0.5) discard;`);
   };
   return <group>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[width / 2, 0, depth / 2]} userData={{ entityType: "ground" }}>
+    <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[width / 2, 0, depth / 2]} userData={{ entityType: "ground" }}>
       <planeGeometry args={[width, depth]} />
-      <meshBasicMaterial key={mask.uuid} color={image ? "#202020" : "#2c2c2c"} onBeforeCompile={cutout} />
+      <meshStandardMaterial key={mask.uuid} color={image ? "#202020" : "#2c2c2c"} onBeforeCompile={cutout} />
     </mesh>
     {image && <BackgroundTexture key={mask.uuid} width={width} depth={depth} image={image} cutout={cutout} />}
   </group>;
@@ -32,8 +32,8 @@ function BackgroundTexture({ width, depth, image, cutout }: { width: number; dep
   texture.colorSpace = SRGBColorSpace;
   const fit = fitContainedImage(width, depth, texture.image.width, texture.image.height);
   // Plane +Y maps to -Z after rotation: the image top remains at map y=0.
-  return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[width / 2, 0.005, depth / 2]}>
+  return <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[width / 2, 0.005, depth / 2]}>
     <planeGeometry args={[fit.width, fit.height]} />
-    <meshBasicMaterial map={texture} toneMapped={false} onBeforeCompile={cutout} />
+    <meshStandardMaterial map={texture} toneMapped={false} onBeforeCompile={cutout} />
   </mesh>;
 }

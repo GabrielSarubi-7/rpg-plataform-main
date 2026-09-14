@@ -6,7 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:baseline": "tsx --test tests/baseline.test.mjs",
-    "test:scene3d": "tsx --test tests/scene3d.phase23.test.mjs",
+    "test:scene3d": "tsx --test tests/scene3d.phase23.test.mjs tests/scene3d.phase45.test.mjs",
     "build": "tsc -p tsconfig.json",
     "migrate:assets": "tsx src/assets/migrateBase64Assets.ts"
   },

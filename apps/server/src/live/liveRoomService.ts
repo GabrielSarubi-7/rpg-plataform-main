@@ -1,4 +1,7 @@
+import { tokenPerceptionFromDb } from "@shared/rules/sceneEnvironmentRules";
 import { randomUUID } from "crypto";
+import { playerView } from "./playerVisibility";
+import { normalizeTokenLight, normalizeVision } from "@shared/rules/sceneEnvironmentRules";
 import { isTokenVisibleInFog } from "@shared/rules/fogVisibility";
 
 import {
@@ -131,7 +134,7 @@ function mapDbTokenToClientToken(token: {
   elevation: number;
   standMode: string;
   barsJson: unknown;
-  statusJson: unknown;
+  statusJson: unknown; visionJson?: unknown; lightJson?: unknown; visibility?: unknown; isHidden?: unknown;
 }) {
   const bars = normalizeTokenBars(token.barsJson);
   const status = normalizeTokenStatus(token.statusJson);
@@ -149,6 +152,7 @@ function mapDbTokenToClientToken(token: {
     conditions: status.conditions,
     elevation: token.elevation,
     standMode: normalizeTokenStandMode(token.standMode),
+    ...tokenPerceptionFromDb(token),
   };
 }
 
@@ -483,6 +487,7 @@ export async function createTokenFromCharacter(input: {
     conditions: [],
     elevation: token.elevation,
     standMode: normalizeTokenStandMode(token.standMode),
+    ...tokenPerceptionFromDb(token),
   };
 
   const room = await ensureCampaignRoom(input.campaignId);
@@ -675,17 +680,12 @@ export async function persistMapSettings(
   });
 }
 
-export function getRoomStateForPlayer(room: RoomState, isGm: boolean): RoomState {
+export function getRoomStateForPlayer(room: RoomState, isGm: boolean, socketId?: string): RoomState {
   if (isGm) {
     return room;
   }
 
-  return {
-    ...room,
-    mapSettings: filterMapSettingsForPlayers(room.mapSettings),
-    tokens: Object.fromEntries(Object.entries(room.tokens).filter(([, token]) => isTokenVisibleInFog(token, room.mapSettings))),
-    annotations: filterAnnotationsForPlayer(room.annotations),
-  };
+  return playerView(room, socketId);
 }
 
 function filterAnnotationsForPlayer(annotations: Record<string, MapAnnotation>) {
