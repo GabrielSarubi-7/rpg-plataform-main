@@ -1,3 +1,8 @@
+import ActionVolume3D from "./ActionVolume3D";
+import ActionBurst3D from "./ActionBurst3D";
+import { canRenderCombatEffect } from "./combatVisuals";
+import { useMapStore } from '@/features/map/store/mapStore';
+import { useCampaignMapStore } from '@/features/map/store/campaignMapStore';
 import { useMemo } from "react";
 import { DoubleSide, Shape } from "three";
 import { Line } from "@react-three/drei/core/Line";
@@ -16,28 +21,32 @@ export default function ActionPreview3D({ tokens, cellSize }: { tokens: Record<s
   const mouse = useActionTargetingStore((s) => s.mouseWorldPosition);
   const resolvedActions = useActionTargetingStore((s) => s.resolvedActions);
   const effects = useLobbyStore((s) => s.activeEffects);
+  const mapId = useMapStore((s) => s.mapId), liveMapId = useCampaignMapStore((s) => s.activeMapId);
+  const onCurrentMap = (effect: { mapId?: string }) => !effect.mapId || effect.mapId === mapId;
   const local = useMemo(() => {
     if (!action || !casterId || !tokens[casterId]) return null;
     const origin = getTokenCenter(tokens[casterId], cellSize);
     const resolved = resolveActionTargeting({ action, tokens, casterTokenId: casterId, origin, requestedPoint: mouse ?? origin, tokenSize: cellSize, pixelsPerFoot: cellSize / 5 });
     return { action, origin, ...resolved };
   }, [action, casterId, tokens, cellSize, mouse]);
-  return <group>
-    {[...effects, ...resolvedActions].map((effect) => <Preview key={"useId" in effect ? effect.useId : effect.id}
-      action={effect.action} origin={effect.targeting.origin} targetPoint={effect.targeting.targetPoint ?? effect.targeting.origin}
+  if (liveMapId && mapId !== liveMapId) return null;
+  return <group name="combat-preview3d">
+    {[...effects, ...resolvedActions.filter(onCurrentMap)].filter((effect) => canRenderCombatEffect(effect, tokens)).map((effect) => <Preview key={"useId" in effect ? effect.useId : effect.id}
+      casterId={effect.casterTokenId} targetTokenIds={effect.targeting.targetTokenIds} action={effect.action} origin={effect.targeting.origin} targetPoint={effect.targeting.targetPoint ?? effect.targeting.origin}
       affectedTokenIds={effect.targeting.affectedTokenIds ?? []} tokens={tokens} cellSize={cellSize} valid />)}
-    {local && <Preview {...local} tokens={tokens} cellSize={cellSize} valid={local.isWithinRange && local.rangeBand !== "invalid"} />}
+    {resolvedActions.filter(onCurrentMap).filter((effect) => canRenderCombatEffect(effect, tokens)).slice(-32).map((effect) => <ActionBurst3D key={effect.useId} effect={effect} tokens={tokens} cellSize={cellSize} />)}
+    {local && <Preview casterId={casterId!} {...local} tokens={tokens} cellSize={cellSize} valid={local.isWithinRange && local.rangeBand !== "invalid"} />}
   </group>;
 }
 
-function Preview({ action, origin, targetPoint, affectedTokenIds, tokens, cellSize, valid }: {
-  action: CharacterAction; origin: Point; targetPoint: Point; affectedTokenIds: string[];
-  tokens: Record<string, Token>; cellSize: number; valid: boolean;
+function Preview({ casterId, action, origin, targetPoint, affectedTokenIds, targetTokenIds, tokens, cellSize, valid }: {
+  casterId: string; action: CharacterAction; origin: Point; targetPoint: Point; affectedTokenIds: string[];
+  tokens: Record<string, Token>; cellSize: number; valid: boolean; targetTokenIds?: string[];
 }) {
   const t = action.targeting;
   const color = valid ? action.visual.borderColor : "#ff6b6b";
-  const from = pixelPointToWorld(origin, cellSize);
-  const to = pixelPointToWorld(targetPoint, cellSize);
+  const from = pixelPointToWorld(origin, cellSize, tokens[casterId]?.elevation ?? 0);
+  const to = pixelPointToWorld(targetPoint, cellSize, tokens[targetTokenIds?.[0] ?? '']?.elevation ?? 0);
   const range = feetToWorldUnits(t.longRangeFt ?? t.rangeFt ?? t.normalRangeFt ?? 0);
   const center = ["self", "self_emanation", "melee_reach", "cone", "line"].includes(t.shape) ? from : to;
   const shape = useMemo(() => {
@@ -60,11 +69,12 @@ function Preview({ action, origin, targetPoint, affectedTokenIds, tokens, cellSi
     return geometry;
   }, [t, origin.x, origin.y, targetPoint.x, targetPoint.y]);
   return <group>
+    <ActionVolume3D action={action} from={from} to={to} color={color} />
     {t.showCasterRange && Boolean(t.normalRangeFt && t.longRangeFt) &&
-      <Ring x={from.x} z={from.z} radius={feetToWorldUnits(t.normalRangeFt!)} color={action.visual.borderColor} />}
-    {t.showCasterRange && range > 0 && <Ring x={from.x} z={from.z} radius={range} color={color} />}
-    {t.showPathLine && <Line points={[[from.x, 0.04, from.z], [to.x, 0.04, to.z]]} color={color} lineWidth={2} raycast={() => {}} />}
-    {shape && <mesh position={[center.x, 0.03, center.z]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => {}}>
+      <Ring y={from.y} x={from.x} z={from.z} radius={feetToWorldUnits(t.normalRangeFt!)} color={action.visual.borderColor} />}
+    {t.showCasterRange && range > 0 && <Ring y={from.y} x={from.x} z={from.z} radius={range} color={color} />}
+    {t.showPathLine && <Line points={[[from.x, from.y + 0.1, from.z], [to.x, to.y + 0.1, to.z]]} color={color} lineWidth={2} raycast={() => {}} />}
+    {shape && <mesh position={[center.x, center.y + 0.03, center.z]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => {}}>
       <shapeGeometry args={[shape, 48]} />
       <meshBasicMaterial color={valid ? action.visual.color : color} transparent opacity={action.visual.opacity} depthWrite={false} side={DoubleSide} />
     </mesh>}
@@ -73,12 +83,12 @@ function Preview({ action, origin, targetPoint, affectedTokenIds, tokens, cellSi
       if (!token) return null;
       const center = pixelPointToWorld(getTokenCenter(token, cellSize), cellSize);
       const size = getTokenDimensions(token, cellSize);
-      return <Ring key={id} x={center.x} z={center.z} radius={pixelsToWorldUnits(Math.max(size.width, size.height) * 0.58, cellSize)} color={color} />;
+      return <Ring y={(token.elevation ?? 0) / 5} key={id} x={center.x} z={center.z} radius={pixelsToWorldUnits(Math.max(size.width, size.height) * 0.58, cellSize)} color={color} />;
     })}
   </group>;
 }
-function Ring({ x, z, radius, color }: { x: number; z: number; radius: number; color: string }) {
-  return <mesh position={[x, 0.04, z]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => {}}>
+function Ring({ x, z, radius, color, y = 0 }: { y?: number; x: number; z: number; radius: number; color: string }) {
+  return <mesh position={[x, y + 0.04, z]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => {}}>
     <ringGeometry args={[Math.max(0, radius - 0.03), radius + 0.03, 64]} />
     <meshBasicMaterial color={color} transparent opacity={0.8} depthWrite={false} side={DoubleSide} />
   </mesh>;

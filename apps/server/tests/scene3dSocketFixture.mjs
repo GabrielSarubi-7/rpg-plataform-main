@@ -7,6 +7,7 @@ import express from "express";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { randomUUID } from 'node:crypto';
 
 export async function startSceneSocketFixture() {
   const previous = { DATABASE_URL: process.env.DATABASE_URL, JWT_SECRET: process.env.JWT_SECRET, ASSET_STORAGE_DIR: process.env.ASSET_STORAGE_DIR };
@@ -33,7 +34,8 @@ export async function startSceneSocketFixture() {
     return ["gm", "player"].includes(userId) ? { role: userId, userId, campaignId } : null;
   });
   stub(prisma.character, "findFirst", async ({ where }) => where.id === character?.id ? character : null);
-  stub(prisma.character, "findMany", async ({ where }) => character?.campaignId === where.campaignId && where.OR.some((condition) => (condition.ownerUserId && condition.ownerUserId === character.ownerUserId) || (condition.createdByUserId && condition.createdByUserId === character.createdByUserId) || character.permissions?.some((p) => p.canControl && p.userId === condition.permissions?.some?.userId)) ? [{ id: character.id }] : []);
+  stub(prisma.character, "findMany", async ({ where }) => where.id?.in ? (where.id.in.includes(character?.id) ? [character] : []) : character?.campaignId === where.campaignId && where.OR.some((condition) => (condition.ownerUserId && condition.ownerUserId === character.ownerUserId) || (condition.createdByUserId && condition.createdByUserId === character.createdByUserId) || character.permissions?.some((p) => p.canControl && p.userId === condition.permissions?.some?.userId)) ? [{ id: character.id }] : []);
+  stub(prisma.mapToken, 'create', async ({ data }) => { const token = { id: randomUUID(), widthCells: 1, heightCells: 1, visibility: 'public', ...structuredClone(data) }; persisted[token.id] = token; return token; });
   stub(prisma.mapToken, "findMany", async ({ where }) => structuredClone(Object.values(persisted).filter((token) => token.mapId === where.mapId && !token.deletedAt)));
   stub(prisma.campaign, "findUnique", async () => ({ id: campaignId }));
   stub(prisma.campaignSession, "findFirst", async () => ({ activeMapId: "map-a" }));

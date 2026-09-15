@@ -65,7 +65,9 @@ export function normalizeMapSettings(input: Partial<MapSettings>): MapSettings {
     backgroundImage = DEFAULT_MAP_SETTINGS.backgroundImage;
   } else {
     const trimmed = input.backgroundImage.trim();
-    backgroundImage = trimmed.length > 0 ? trimmed : undefined;
+    // Preserve an explicit empty background through repeated normalization.
+    // Player visibility and scene updates must not restore the default image.
+    backgroundImage = trimmed;
   }
 
   return {

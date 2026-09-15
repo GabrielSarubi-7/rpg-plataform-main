@@ -30,6 +30,8 @@ import SceneEnvironment3D from "../environment/SceneEnvironment3D";
 import SceneFloor3D from "../environment/SceneFloor3D";
 import CameraBookmarkController from "../camera/CameraBookmarkController";
 import SceneWorldPanel from "../editor/SceneWorldPanel";
+import Measure3D from "../actions/Measure3D";
+import CombatStatus3D from "../actions/CombatStatus3D";
 
 export default function Scene3DCanvas(props: Scene3DProps) {
   const storedMap = useMapStore();
@@ -43,6 +45,9 @@ export default function Scene3DCanvas(props: Scene3DProps) {
   const scene = useMemo(() => normalizeScene3DConfig(layer.scene3d), [layer.scene3d]);
   const [editing, setEditing] = useState(false);
   const [worldOpen, setWorldOpen] = useState(false);
+  const [measuring, setMeasuring] = useState(false);
+  const [spatialMeasure, setSpatialMeasure] = useState(false);
+  useEffect(() => { setMeasuring(false); }, [storedMap.mapId, props.isTargeting]);
   const [selectedFloor, setFloor] = useState("");
   const [showAll, setShowAll] = useState(Boolean(props.isGm));
   const [bookmark, setBookmark] = useState<CameraBookmark | null>(null);
@@ -104,19 +109,23 @@ export default function Scene3DCanvas(props: Scene3DProps) {
       {Object.values(visibleTokens).map((token) => <Token3D key={token.id} token={token} cellSize={props.cellSize}
         character={charactersById.get(token.characterId ?? "")} sheetTemplate={props.sheetTemplate} selected={props.selectedTokenIds.includes(token.id)} />)}
       <ActionPreview3D tokens={visibleTokens} cellSize={props.cellSize} />
-      {!editActive && !preview && <SceneInputController {...props} tokens={visibleTokens} />}
+      {measuring && !editActive && !preview && <Measure3D tokens={visibleTokens} cellSize={props.cellSize} spatial={spatialMeasure} />}
+      {!measuring && !editActive && !preview && <SceneInputController {...props} tokens={visibleTokens} />}
       </Suspense>
     </Canvas>
     <div className={styles.toolbar} data-ui-layer="true">
       <button type="button" onClick={() => setResetRequest((n) => n + 1)}>Enquadrar mapa</button>
       <button type="button" disabled={!selected} onClick={() => setFocusRequest((n) => n + 1)}>Focar token</button>
       <button type="button" aria-pressed={gridVisible} onClick={() => setGridVisible((v) => !v)}>Grid</button>
+      <button type="button" aria-pressed={measuring} disabled={editActive || Boolean(preview) || props.isTargeting} onClick={() => setMeasuring((v) => !v)}>Medir 3D</button>
+      {measuring && <><label><input type="checkbox" checked={spatialMeasure} onChange={(e) => setSpatialMeasure(e.target.checked)} /> Distância espacial informativa</label><small>Clique em dois tokens ou pontos. Esc limpa. Elevação não altera o alcance das ações.</small></>}
       <button type="button" onClick={props.onReturnTo2D}>2D</button>
       {canEdit && <button type="button" aria-pressed={editing} disabled={busy || props.isTargeting} onClick={() => { setEditing((v) => !v); setWorldOpen(false); setPreview(null); props.onSelectToken(null); }}>Editor 3D</button>}
       {props.authToken && <button onClick={() => { setWorldOpen((v) => !v); setEditing(false); }}>Ambiente e visão</button>}
       {preview && <button onClick={() => setPreview(null)}>Sair da visão do jogador</button>}
       <small>Esquerdo: selecionar/arrastar · Direito no chão: pan · Meio: orbitar · Roda: zoom</small>
       <small>Direito no token: menu · Esc: cancelar · Imagens, fichas e ferramentas de desenho: use 2D.</small>
+      {!preview && <CombatStatus3D tokens={visibleTokens} cellSize={props.cellSize} />}
     </div>
     {editActive && <SceneEditor3D scene={scene} selectedId={objectId} onSelect={setObjectId} mode={transformMode} setMode={setTransformMode} width={width} depth={depth} authToken={props.authToken!} busy={busy} status={status} saveObject={saveObject} removeObject={(id) => mutate("scene3d:object:remove", { objectId: id })} saveSettings={(settings) => mutate("scene3d:settings:update", { settings })} sync={() => mutate("scene3d:sync")} />}
     {worldOpen && <SceneWorldPanel scene={scene} isGm={Boolean(props.isGm)} tokens={sourceTokens} selectedToken={selected} selectToken={props.onSelectToken} mutate={mutate} request={request} players={players} preview={setPreview} capture={() => setCapture((n) => n + 1)} activate={(value) => setBookmark({ ...value })} selectedFloor={selectedFloor} setFloor={setFloor} showAll={showAll} setShowAll={setShowAll} />}

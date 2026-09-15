@@ -295,6 +295,7 @@ export async function loadRoomFromCampaign(campaignId: string) {
 }
 
 export async function reloadCampaignRoom(campaignId: string) {
+  const previousMapId = rooms[campaignId]?.mapSettings.mapId;
   const existingPlayers = rooms[campaignId]?.players ?? [];
   const existingAnnotations = rooms[campaignId]?.annotations ?? {};
   const existingActiveEffects = rooms[campaignId]?.activeEffects ?? [];
@@ -303,7 +304,7 @@ export async function reloadCampaignRoom(campaignId: string) {
 
   room.players = existingPlayers;
   room.annotations = existingAnnotations;
-  room.activeEffects = existingActiveEffects;
+  room.activeEffects = previousMapId === room.mapSettings.mapId ? existingActiveEffects : [];
   rooms[campaignId] = room;
 
   return room;

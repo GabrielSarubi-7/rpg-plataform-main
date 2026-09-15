@@ -253,6 +253,7 @@ export interface UseActionPayload {
 }
 
 export interface ActionUsedPayload extends Omit<UseActionPayload, "authToken"> {
+  mapId?: string;
   usedAt: number;
   previewDurationMs?: number;
 }

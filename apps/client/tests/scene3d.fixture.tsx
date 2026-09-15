@@ -47,6 +47,7 @@ useTokenStore.getState().setTokens({
 const action = { id: "fire", name: "Fire", kind: "spell", icon: "", description: "", activation: { type: "action", cost: 1 }, targeting: { shape: "point_sphere", rangeFt: 60, radiusFt: 10, showImpactArea: true, showCasterRange: true, showPathLine: true }, visual: { color: "#ff6600", borderColor: "#ffaa00", opacity: 0.3 }, roll: { mode: "none" } };
 Object.assign(window, { fixture: {
   emissions,
+  characters: () => [character],
   sprite,
   portrait,
   originalBackground: background,
@@ -86,6 +87,8 @@ Object.assign(window, { fixture: {
   fog: (enabled: boolean) => useMapStore.getState().setMapSettings({ ...useMapStore.getState(), layerConfig: { ...normalizeMapLayerConfig(undefined), fogOfWar: { ...normalizeMapLayerConfig(undefined).fogOfWar, enabled } } }),
   background: (image: string) => useMapStore.getState().setMapSettings({ ...useMapStore.getState(), backgroundImage: image }),
   targeting: () => useActionTargetingStore.getState().startTargeting(action as never, "hero"),
+  action: (value: unknown, point?: { x: number; y: number }) => { useActionTargetingStore.getState().startTargeting(value as never, 'hero'); if (point) useActionTargetingStore.getState().updateMousePosition(point); },
+  cancelAction: () => useActionTargetingStore.getState().cancelTargeting(),
   rangedTargeting: () => useActionTargetingStore.getState().startTargeting({ ...action, targeting: { shape: "ranged_projectile", normalRangeFt: 30, longRangeFt: 60, showCasterRange: true } } as never, "hero"),
 } });
 function Fixture() {

@@ -52,7 +52,7 @@ export const useActionTargetingStore = create<ActionTargetingStore>((set) => ({
 
   addResolvedAction: (action) =>
     set((state) => ({
-      resolvedActions: [...state.resolvedActions, action],
+      resolvedActions: [...state.resolvedActions.filter((existing) => existing.useId !== action.useId), action].slice(-32),
     })),
 
   removeResolvedAction: (useId) =>
@@ -62,4 +62,3 @@ export const useActionTargetingStore = create<ActionTargetingStore>((set) => ({
       ),
     })),
 }));
-

@@ -47,6 +47,11 @@ export function useRoomSocketEvents() {
   const setAnnotations = useAnnotationStore((s) => s.setAnnotations);
 
   useEffect(() => {
+    const timers = new Set<number>();
+    const clearActionPreviews = () => {
+      timers.forEach((timer) => window.clearTimeout(timer)); timers.clear();
+      useActionTargetingStore.setState({ resolvedActions: [], activeAction: null, casterTokenId: null, isTargeting: false, mouseWorldPosition: null });
+    };
     socket.on("scene3d:updated", applySceneUpdate);
     const viewingPrivateMap = () => {
       const maps = useCampaignMapStore.getState();
@@ -58,6 +63,7 @@ export function useRoomSocketEvents() {
       setRoomState(room);
       setActiveMapId(room.mapSettings.mapId ?? null);
       if (preservePrivateView) return;
+      if (useMapStore.getState().mapId !== room.mapSettings.mapId) clearActionPreviews();
       setTokens(room.tokens);
       setMapSettings(room.mapSettings);
       setAnnotations(room.annotations ?? {});
@@ -98,11 +104,14 @@ export function useRoomSocketEvents() {
     };
 
     const handleActionUsed = (payload: ActionUsedPayload) => {
+      if (viewingPrivateMap() || (payload.mapId && payload.mapId !== useMapStore.getState().mapId)) return;
       addResolvedAction(payload);
 
-      window.setTimeout(() => {
+      const timer = window.setTimeout(() => {
         removeResolvedAction(payload.useId);
-      }, payload.previewDurationMs ?? 3200);
+        timers.delete(timer);
+      }, Math.min(10000, Math.max(0, payload.previewDurationMs ?? 3200)));
+      timers.add(timer);
     };
 
     const handleCharacterUpdated = (character: Character) => {
@@ -127,6 +136,7 @@ export function useRoomSocketEvents() {
     socket.on("character:deleted", handleCharacterDeleted);
 
     return () => {
+      clearActionPreviews();
       socket.off("scene3d:updated", applySceneUpdate);
       socket.off("room:state", handleRoomState);
       socket.off("token:added", handleTokenAdded);

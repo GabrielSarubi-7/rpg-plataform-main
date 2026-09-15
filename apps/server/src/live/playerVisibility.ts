@@ -4,6 +4,7 @@ import type { RoomState, Player } from "@shared/types/multiplayer";
 import { createVisibility, tokenPoint } from "@shared/rules/visibilityRules";
 import { filterMapSettingsForPlayers, normalizeMapLayerConfig } from "@shared/rules/mapRules";
 import { isTokenVisibleInFog } from "@shared/rules/fogVisibility";
+import { isFogAreaVisible } from "@shared/rules/fogVisibility";
 import { getRoom } from "./liveRoomService";
 export const socketUsers = new Map<string, string>();
 const observers = new Map<string, { mapId?: string; ids: string[] }>();
@@ -13,6 +14,10 @@ export function safeRelatedPayload(room: RoomState, socketId: string, payload: u
   if (room.players.find((p) => p.id === socketId)?.isGm) return true;
   if (payload && typeof payload === "object" && "id" in payload && restrictedHistory.has(String(payload.id))) return false;
   const view = playerView(room, socketId), text = JSON.stringify(payload) ?? "";
+  if (payload && typeof payload === 'object' && 'targeting' in payload) {
+    const targeting = payload.targeting as { origin?: { x: number; y: number }; targetPoint?: { x: number; y: number } };
+    if ([targeting?.origin, targeting?.targetPoint].some((point) => point && !isFogAreaVisible(view.mapSettings.layerConfig?.fogOfWar, point.x / room.mapSettings.cellSize, point.y / room.mapSettings.cellSize))) return false;
+  }
   return !Object.values(room.tokens).filter((t) => !view.tokens[t.id]).some((t) => [t.id, t.characterId, t.name, t.image].some((value) => value && value.length > 1 && text.includes(value)));
 }
 export function relatedAudience(io: Server, room: RoomState) { return { emit(event: string, payload: unknown) {
@@ -67,7 +72,7 @@ export function playerView(room: RoomState, socketId?: string): RoomState {
     layer.images = layer.images.filter((i) => sight.visible({ x: (i.x + i.width / 2) / room.mapSettings.cellSize, z: (i.y + i.height / 2) / room.mapSettings.cellSize, y: 0.5 }));
   }
   const entries = room.turnState.entries.map((entry, index) => tokens[entry.tokenId] ? entry : { id: `concealed-turn-${index}`, tokenId: `concealed-turn-${index}`, name: "Oculto", initiative: 0, order: entry.order });
-  const value = { ...room, tokens, mapSettings: { ...mapSettings, layerConfig: layer }, turnState: { ...room.turnState, entries }, activeEffects: room.activeEffects.filter((effect) => !sight.enabled && tokens[effect.casterTokenId] && !Object.values(room.tokens).filter((t) => !tokens[t.id]).some((t) => [t.id, t.characterId].some((id) => id && JSON.stringify(effect).includes(id)))), annotations: Object.fromEntries(Object.entries(room.annotations).filter(([, a]) => a.visibility !== "gm" && (!sight.enabled || (a.type === "text" ? sight.visible({ x: a.x / room.mapSettings.cellSize, z: a.y / room.mapSettings.cellSize, y: 0.5 }) : a.points.every((p) => sight.visible({ x: p.x / room.mapSettings.cellSize, z: p.y / room.mapSettings.cellSize, y: 0.5 })))))) };
+  const value = { ...room, tokens, mapSettings: { ...mapSettings, layerConfig: layer }, turnState: { ...room.turnState, entries }, activeEffects: room.activeEffects.filter((effect) => tokens[effect.casterTokenId] && [...(effect.targeting.targetTokenIds ?? []), ...(effect.targeting.affectedTokenIds ?? [])].every((id) => Boolean(tokens[id])) && [effect.targeting.origin, effect.targeting.targetPoint].every((point) => !point || isFogAreaVisible(layer.fogOfWar, point.x / room.mapSettings.cellSize, point.y / room.mapSettings.cellSize)) && !Object.values(room.tokens).filter((t) => !tokens[t.id]).some((t) => [t.id, t.characterId].some((id) => id && JSON.stringify(effect).includes(id)))), annotations: Object.fromEntries(Object.entries(room.annotations).filter(([, a]) => a.visibility !== "gm" && (!sight.enabled || (a.type === "text" ? sight.visible({ x: a.x / room.mapSettings.cellSize, z: a.y / room.mapSettings.cellSize, y: 0.5 }) : a.points.every((p) => sight.visible({ x: p.x / room.mapSettings.cellSize, z: p.y / room.mapSettings.cellSize, y: 0.5 })))))) };
   if (socketId) viewCache.set(socketId, { room, signature, value });
   return value;
 }

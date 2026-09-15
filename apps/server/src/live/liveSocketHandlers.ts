@@ -767,6 +767,13 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
       (currentPlayer) => currentPlayer.id === socket.id,
     );
 
+    // Preserve the current targeting rules, but reject references the actor
+    // is not authorized to know before resolving rolls or creating effects.
+    if (!actorContext.isGm) {
+      if (!player || socketUsers.get(socket.id) !== actorContext.userId) return;
+      try { await refreshViewer(room, player); } catch { return; }
+      if (!safeRelatedPayload(room, socket.id, payload)) return;
+    }
     const affectedNames = (payload.targeting.affectedTokenIds ?? [])
       .map((tokenId) => room.tokens[tokenId]?.name)
       .filter((name): name is string => Boolean(name));
@@ -834,6 +841,7 @@ export function registerLiveSocketHandlers(io: Server, socket: Socket) {
     relatedAudience(io, room).emit("action:used", {
       useId: payload.useId,
       roomCode: payload.roomCode,
+      mapId: room.mapSettings.mapId,
       action: payload.action,
       casterTokenId: payload.casterTokenId,
       characterId: payload.characterId,
